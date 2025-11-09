@@ -64,7 +64,7 @@ jobs:
       # Launch PHP built-in server to serve the application on localhost port 8000
       - name: Start web server
         run: |
-          cd petite-patisserie
+          cd "web application"
           php -S localhost:8000 > /dev/null 2>&1 &
           sleep 5
           curl -I http://localhost:8000/index.php || echo "Waiting for server..."
@@ -91,3 +91,4 @@ jobs:
           name: test-screenshots
           path: tests/test_screenshots/
           retention-days: 30
+          if-no-files-found: ignore

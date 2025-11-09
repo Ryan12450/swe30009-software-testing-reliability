@@ -1,0 +1,11 @@
+Test_ID,Description,Chocolate_Lava_Cake,Strawberry_Cheesecake,Tiramisu_Cup,Matcha_Roll_Cake,Blueberry_Muffin,Macaron_Set,Ice_Cream_Sundae,Mango_Pudding,Discount_Enabled,Expected_Subtotal,Expected_SST,Expected_Grand_Total
+TC01,Single item - no discount,1,0,0,0,0,0,0,0,No,16.00,0.96,16.96
+TC02,Single item - with discount,1,0,0,0,0,0,0,0,Yes,8.00,0.48,8.48
+TC03,Two items (1 each) - no discount,1,1,0,0,0,0,0,0,No,29.50,1.77,31.27
+TC04,All 8 items (1 each) - no discount,1,1,1,1,1,1,1,1,No,90.00,5.40,95.40
+TC05,All 8 items (1 each) - with discount,1,1,1,1,1,1,1,1,Yes,45.00,2.70,47.70
+TC06,Small mixed order - no discount,2,1,0,2,0,1,0,1,No,88.00,5.28,93.28
+TC07,Small mixed order - with discount,2,1,0,2,0,1,0,1,Yes,44.00,2.64,46.64
+TC08,Heavier mix of popular desserts - no discount,3,2,1,0,2,0,1,0,No,110.50,6.63,117.13
+TC09,High-quantity single item - no discount,10,0,0,0,0,0,0,0,No,160.00,9.60,169.60
+TC10,Large mixed order - with discount,5,3,2,4,6,2,3,4,Yes,158.00,9.48,167.48

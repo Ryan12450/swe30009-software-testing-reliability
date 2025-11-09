@@ -39,13 +39,12 @@ jobs:
           pip install -r requirements.txt
 
       # Step 4: Set up Chrome browser and ChromeDriver
-      # Ensure the browser and WebDriver are available for Selenium tests
-      # The runner comes with Chrome pre-installed; this ensures ChromeDriver compatibility
+      # ERROR INTRODUCED HERE: Incorrect indentation on 'with:' and 'id:'
       - name: Set up Chrome and ChromeDriver
         uses: browser-actions/setup-chrome@v1
-        with:
-          chrome-version: stable
-        id: setup-chrome
+      with:
+        chrome-version: stable
+      id: setup-chrome
 
       - name: Verify browser setup
         run: |

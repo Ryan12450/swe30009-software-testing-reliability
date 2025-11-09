@@ -1,0 +1,93 @@
+# GitHub Actions Workflow for Selenium Testing on Ubuntu
+# This workflow automates the execution of Selenium tests in a CI/CD pipeline
+
+name: Selenium Tests (Ubuntu)
+
+# Configure the workflow to run manually
+# This allows triggering the workflow on-demand from the Actions tab
+on:
+  workflow_dispatch:
+
+# Set a global timeout of 30 minutes to prevent stalled jobs from consuming resources
+# This will automatically terminate the job if it exceeds this time limit
+jobs:
+  test:
+    # Specify the runner environment - using the latest Ubuntu image
+    runs-on: ubuntu-latest
+
+    # Set job-level timeout to 30 minutes
+    timeout-minutes: 30
+
+    steps:
+      # Step 1: Check out the repository code
+      # This clones the repository so the workflow can access the files
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # Step 2: Set up Python environment
+      # Configure Python 3.x to run the test scripts
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      # Step 3: Install project dependencies
+      # Install all required Python packages from requirements.txt
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      # Step 4: Set up Chrome browser and ChromeDriver
+      # Ensure the browser and WebDriver are available for Selenium tests
+      # The runner comes with Chrome pre-installed; this ensures ChromeDriver compatibility
+      - name: Set up Chrome and ChromeDriver
+        uses: browser-actions/setup-chrome@v1
+        with:
+          chrome-version: stable
+        id: setup-chrome
+
+      - name: Verify browser setup
+        run: |
+          echo "Chrome path: ${{ steps.setup-chrome.outputs.chrome-path }}"
+          google-chrome --version
+          which google-chrome
+
+      # Step 5: Set up PHP environment
+      # Configure PHP to serve the web application
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: "8.1"
+
+      # Step 6: Start the web server
+      # Launch PHP built-in server to serve the application on localhost port 8000
+      - name: Start web server
+        run: |
+          cd petite-patisserie
+          php -S localhost:8000 > /dev/null 2>&1 &
+          sleep 5
+          curl -I http://localhost:8000/index.php || echo "Waiting for server..."
+          sleep 2
+        env:
+          BASE_URL: http://localhost:8000/index.php
+
+      # Step 7: Execute Selenium test script
+      # Run the Python test script which reads test cases from CSV,
+      # launches the browser, loads the web application, and collects results
+      - name: Run Selenium tests
+        run: |
+          cd tests
+          python test_order_GitHub_Actions.py
+        env:
+          BASE_URL: http://localhost:8000/index.php
+
+      # Step 8: Upload test artifacts
+      # Save screenshots and error logs as artifacts for debugging and review
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-screenshots
+          path: tests/test_screenshots/
+          retention-days: 30

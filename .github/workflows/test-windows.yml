@@ -1,0 +1,95 @@
+# GitHub Actions Workflow for Testing on Windows
+# This file runs Selenium tests automatically on a Windows environment
+
+name: Selenium Tests (Windows)
+
+# Trigger: Manual only
+# Go to the Actions tab and click "Run workflow" to start this
+on:
+  workflow_dispatch:
+
+# Timeout: Stop the job after 30 minutes
+# This prevents the workflow from running forever if something goes wrong
+jobs:
+  test:
+    # Use the latest Windows operating system for testing
+    runs-on: windows-latest
+
+    # Maximum time allowed for this job is 30 minutes
+    timeout-minutes: 30
+
+    steps:
+      # Step 1: Get the code from the repository
+      # This downloads all files from GitHub to the runner
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # Step 2: Install Python
+      # Python 3.12 is needed to run the test script
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      # Step 3: Install required packages
+      # Install Selenium and other packages listed in requirements.txt
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      # Step 4: Setup Chrome browser for testing
+      # This makes sure Chrome and ChromeDriver are ready for Selenium
+      - name: Set up Chrome and ChromeDriver
+        uses: browser-actions/setup-chrome@v1
+        with:
+          chrome-version: stable
+        id: setup-chrome
+
+      # Step 5: Check if Chrome is installed correctly
+      # Display Chrome version to confirm it's working
+      - name: Verify browser setup
+        run: |
+          echo "Chrome path: ${{ steps.setup-chrome.outputs.chrome-path }}"
+          & "C:\Program Files\Google\Chrome\Application\chrome.exe" --version
+
+      # Step 6: Install PHP
+      # PHP is needed to run the web application server
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: "8.1"
+
+      # Step 7: Start the web application
+      # Start PHP server on port 8000 using Windows PowerShell commands
+      # Wait a few seconds to make sure the server is ready
+      - name: Start web server
+        run: |
+          cd "web application"
+          Start-Process php -ArgumentList "-S", "localhost:8000" -WindowStyle Hidden
+          Start-Sleep -Seconds 5
+          curl.exe -I http://localhost:8000/index.php
+          Start-Sleep -Seconds 2
+        shell: powershell
+        env:
+          BASE_URL: http://localhost:8000/index.php
+
+      # Step 8: Run the tests
+      # Execute the Python test script that reads CSV file and runs Selenium tests
+      - name: Run Selenium tests
+        run: |
+          cd tests
+          python test_order_GitHub_Actions.py
+        env:
+          BASE_URL: http://localhost:8000/index.php
+
+      # Step 9: Save test screenshots
+      # Upload screenshots even if tests fail so it's possible to see what happened
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-screenshots-windows
+          path: tests/test_screenshots/
+          retention-days: 30
+          if-no-files-found: ignore

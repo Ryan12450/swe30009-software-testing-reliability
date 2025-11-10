@@ -214,13 +214,7 @@ class DessertOrderTestCase(unittest.TestCase):
                         f"Grand Total mismatch: Expected '{expected_grand_total}' but got '{actual_grand_total}'")
         
         print(f"✅ Subtotal: RM{actual_subtotal} | SST: RM{actual_sst} | Grand Total: RM{actual_grand_total}")
-
-        # Test passed - save screenshot
         print(f"✅ Test Case {test_id}: PASS")
-        timestamp = datetime.now().strftime("%Y-%m-%d_%I-%M-%S-%p")
-        screenshot_file = os.path.join(SCREENSHOT_DIR, f"{test_id}_PASS_{timestamp}.png")
-        self.driver.save_screenshot(screenshot_file)
-        print(f"📸 Screenshot saved to {screenshot_file}")
 
     # HTML Report Generation
     def generate_html_report(self, results, total_duration):

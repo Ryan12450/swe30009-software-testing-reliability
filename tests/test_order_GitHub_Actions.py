@@ -146,19 +146,20 @@ class DessertOrderTestCase(unittest.TestCase):
         discount_slider = wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, '.discount-toggle .slider')))
         is_checked = discount_checkbox.is_selected()
 
+        # Toggle discount if needed, waiting for actual state change instead of using time.sleep()
         if discount_needed == 'Yes' and not is_checked:
             self.driver.execute_script("arguments[0].scrollIntoView({behavior: 'smooth', block: 'center'});", discount_slider)
             wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, '.discount-toggle .slider')))
             self.driver.execute_script("arguments[0].click();", discount_slider)
-            # Verify the toggle state changed
-            time.sleep(0.3)  # Brief pause for animation
+            # Wait for the checkbox state to actually change to selected
+            wait.until(lambda driver: discount_checkbox.is_selected())
             self.assertTrue(discount_checkbox.is_selected(), "Discount toggle failed to enable")
         elif discount_needed == 'No' and is_checked:
             self.driver.execute_script("arguments[0].scrollIntoView({behavior: 'smooth', block: 'center'});", discount_slider)
             wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, '.discount-toggle .slider')))
             self.driver.execute_script("arguments[0].click();", discount_slider)
-            # Verify the toggle state changed
-            time.sleep(0.3)  # Brief pause for animation
+            # Wait for the checkbox state to actually change to unselected
+            wait.until(lambda driver: not discount_checkbox.is_selected())
             self.assertFalse(discount_checkbox.is_selected(), "Discount toggle failed to disable")
         
         # Show final discount status
@@ -207,9 +208,10 @@ class DessertOrderTestCase(unittest.TestCase):
         
         print(f"✅ Subtotal: RM{actual_subtotal} | SST: RM{actual_sst} | Grand Total: RM{actual_grand_total}")
 
-        # Test passed - save screenshot
+        # Test passed - save screenshot with timestamp for easier tracking
         print(f"✅ Test Case {test_id}: PASS")
-        screenshot_file = os.path.join(SCREENSHOT_DIR, f"{test_id}_PASS.png")
+        timestamp = datetime.now().strftime("%Y-%m-%d_%I-%M-%S-%p")
+        screenshot_file = os.path.join(SCREENSHOT_DIR, f"{test_id}_PASS_{timestamp}.png")
         self.driver.save_screenshot(screenshot_file)
         print(f"📸 Screenshot saved to {screenshot_file}")
     
@@ -234,7 +236,9 @@ class DessertOrderTestCase(unittest.TestCase):
                 # Log full error details to file for debugging
                 log_error_to_file(test_id, full_error)
                 
-                screenshot_file = os.path.join(SCREENSHOT_DIR, f"{test_id}_FAIL.png")
+                # Save screenshot with timestamp for easier tracking
+                timestamp = datetime.now().strftime("%Y-%m-%d_%I-%M-%S-%p")
+                screenshot_file = os.path.join(SCREENSHOT_DIR, f"{test_id}_FAIL_{timestamp}.png")
                 self.driver.save_screenshot(screenshot_file)
                 print(f"📸 Screenshot saved to {screenshot_file}")
                 print(f"📝 Full error log saved to {ERROR_LOG_FILE}")

@@ -40,27 +40,28 @@ jobs:
 
       # Step 4: Set up Chrome browser and ChromeDriver
       # Ensure the browser and WebDriver are available for Selenium tests
-      # The runner comes with Chrome pre-installed; this ensures ChromeDriver compatibility
       - name: Set up Chrome and ChromeDriver
         uses: browser-actions/setup-chrome@v1
         with:
           chrome-version: stable
         id: setup-chrome
 
+      # Step 5: Check if Chrome is installed correctly
+      # Display Chrome version to confirm it's working
       - name: Verify browser setup
         run: |
           echo "Chrome path: ${{ steps.setup-chrome.outputs.chrome-path }}"
           google-chrome --version
           which google-chrome
 
-      # Step 5: Set up PHP environment
+      # Step 6: Install PHP
       # Configure PHP to serve the web application
       - name: Set up PHP
         uses: shivammathur/setup-php@v2
         with:
           php-version: "8.1"
 
-      # Step 6: Start the web server
+      # Step 7: Start the web application
       # Launch PHP built-in server to serve the application on localhost port 8000
       - name: Start web server
         run: |
@@ -72,7 +73,7 @@ jobs:
         env:
           BASE_URL: http://localhost:8000/index.php
 
-      # Step 7: Execute Selenium test script
+      # Step 8: Execute Selenium test script
       # Run the Python test script which reads test cases from CSV,
       # launches the browser, loads the web application, and collects results
       - name: Run Selenium tests
@@ -82,7 +83,7 @@ jobs:
         env:
           BASE_URL: http://localhost:8000/index.php
 
-      # Step 8: Upload the HTML Test Report
+      # Step 9A: Upload the HTML Test Report
       - name: Upload Test Report
         if: always()
         uses: actions/upload-artifact@v4
@@ -92,12 +93,12 @@ jobs:
           retention-days: 30
           if-no-files-found: warn
           
-      # Save screenshots and error logs as artifacts for debugging and review
-      - name: Upload test results
+      # Step 9B: Save screenshots and error logs as artifacts for debugging and review
+      - name: Upload Screenshots
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: test-screenshots
+          name: test-screenshots-ubuntu
           path: tests/test_screenshots/
           retention-days: 30
           if-no-files-found: ignore

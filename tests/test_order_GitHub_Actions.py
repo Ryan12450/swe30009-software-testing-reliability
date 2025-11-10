@@ -54,6 +54,21 @@ def log_error_to_file(test_id, error):
         print(f"⚠️ Could not write to error log: {e}")
 
 
+def take_screenshot(driver, test_id, page_name):
+    """Takes a screenshot of the current page and saves it."""
+    try:
+        os.makedirs(SCREENSHOT_DIR, exist_ok=True)
+        timestamp = datetime.now().strftime("%Y-%m-%d_%I-%M-%S-%p")
+        filename = f"{test_id}_{page_name}_{timestamp}.png"
+        filepath = os.path.join(SCREENSHOT_DIR, filename)
+        driver.save_screenshot(filepath)
+        print(f"📸 Screenshot saved: {filename}")
+        return filepath
+    except Exception as e:
+        print(f"⚠️ Failed to take screenshot: {e}")
+        return None
+
+
 class DessertOrderTestCase(unittest.TestCase):
     """Unit test class for testing dessert ordering system using Selenium in GitHub Actions."""
     
@@ -122,6 +137,8 @@ class DessertOrderTestCase(unittest.TestCase):
         wait = WebDriverWait(self.driver, 10)
         wait.until(EC.presence_of_element_located((By.ID, 'calculateBtn')))
 
+        take_screenshot(self.driver, test_id, "order_page")
+
         # Fill in quantities
         for csv_key, input_id in ITEM_MAPPING.items():
             quantity = row[csv_key]
@@ -168,6 +185,8 @@ class DessertOrderTestCase(unittest.TestCase):
         
         wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, ".receipt-row.subtotal .receipt-value")))
         
+        take_screenshot(self.driver, test_id, "results_page")
+
         # Extract actual values
         subtotal_spans = self.driver.find_elements(By.CSS_SELECTOR, ".receipt-row.subtotal .receipt-value")
         self.assertTrue(len(subtotal_spans) > 0, "Could not find subtotal on receipt page.")

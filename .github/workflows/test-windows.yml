@@ -82,6 +82,7 @@ jobs:
           python test_order_GitHub_Actions.py
         env:
           BASE_URL: http://localhost:8000/index.php
+          PYTHONIOENCODING: utf-8
 
       # Step 9: Save test screenshots
       # Upload screenshots even if tests fail so it's possible to see what happened

@@ -5,6 +5,7 @@ import sys
 import argparse
 import traceback
 import unittest
+import html
 from datetime import datetime
 from decimal import Decimal, ROUND_HALF_UP
 from selenium import webdriver
@@ -16,10 +17,11 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import NoSuchElementException, TimeoutException
 
-# --- Global Settings for GitHub Actions ---
+# Global Settings for GitHub Actions
 BASE_URL = os.getenv("BASE_URL", "http://localhost:8000/index.php")
 SCREENSHOT_DIR = os.path.join("test_screenshots")
 ERROR_LOG_FILE = os.path.join("test_screenshots", "error_log.txt")
+REPORT_FILE = "test_report.html" 
 
 # Helper function for safe decimal comparison
 def d(value):
@@ -57,11 +59,11 @@ class DessertOrderTestCase(unittest.TestCase):
     
     @classmethod
     def setUpClass(cls):
-        """Set up test class - runs once before all tests. Configured for GitHub Actions."""
+        """Set up test class - runs once before all tests."""
         print("Setting up the browser for GitHub Actions (headless mode)...")
         options = Options()
         
-        # Chrome arguments for stability and GitHub Actions compatibility
+        # Chrome arguments
         options.add_argument('--headless')
         options.add_argument('--no-sandbox')
         options.add_argument('--disable-dev-shm-usage')
@@ -77,9 +79,10 @@ class DessertOrderTestCase(unittest.TestCase):
         options.add_argument('--window-size=1920,1080')
         options.add_experimental_option('excludeSwitches', ['enable-logging'])
         
-        # Let Selenium automatically manage the driver
         cls.driver = webdriver.Chrome(options=options)
         
+        # Create screenshot directory relative to this script's location
+        # (Script runs from 'tests/' dir in workflow)
         os.makedirs(SCREENSHOT_DIR, exist_ok=True)
         
         # Load test cases from CSV
@@ -115,57 +118,44 @@ class DessertOrderTestCase(unittest.TestCase):
         
         print(f"\n--- Running Test Case: {test_id} ({description}) ---")
         
-        # Navigate to the order page
         self.driver.get(BASE_URL)
-        
-        # Use explicit wait instead of time.sleep()
         wait = WebDriverWait(self.driver, 10)
-        
-        # Wait for the calculate button to be present (indicates page is ready)
         wait.until(EC.presence_of_element_located((By.ID, 'calculateBtn')))
 
-        # Fill in quantities for all dessert items
+        # Fill in quantities
         for csv_key, input_id in ITEM_MAPPING.items():
             quantity = row[csv_key]
             if int(quantity) >= 0:
-                # Wait for the input to be present before interacting
                 qty_input = wait.until(EC.presence_of_element_located((By.ID, input_id)))
                 self.driver.execute_script("arguments[0].scrollIntoView({behavior: 'smooth', block: 'center'});", qty_input)
-                # Using JavaScript to set value is more reliable than .send_keys()
                 self.driver.execute_script("arguments[0].value = arguments[1];", qty_input, quantity)
         
-        # Display total items in this test case
         total_items = 0
         for csv_key in ITEM_MAPPING.keys():
             total_items += int(row[csv_key])
         print(f"🛒 Total items in order: {total_items}")
         
-        # Handle the discount toggle with stronger validation
+        # Handle the discount toggle
         discount_needed = row['Discount_Enabled']
         discount_checkbox = wait.until(EC.presence_of_element_located((By.ID, 'discountToggle')))
         discount_slider = wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, '.discount-toggle .slider')))
         is_checked = discount_checkbox.is_selected()
 
-        # Toggle discount if needed, waiting for actual state change instead of using time.sleep()
         if discount_needed == 'Yes' and not is_checked:
             self.driver.execute_script("arguments[0].scrollIntoView({behavior: 'smooth', block: 'center'});", discount_slider)
             wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, '.discount-toggle .slider')))
             self.driver.execute_script("arguments[0].click();", discount_slider)
-            # Wait for the checkbox state to actually change to selected
             wait.until(lambda driver: discount_checkbox.is_selected())
             self.assertTrue(discount_checkbox.is_selected(), "Discount toggle failed to enable")
         elif discount_needed == 'No' and is_checked:
             self.driver.execute_script("arguments[0].scrollIntoView({behavior: 'smooth', block: 'center'});", discount_slider)
             wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, '.discount-toggle .slider')))
             self.driver.execute_script("arguments[0].click();", discount_slider)
-            # Wait for the checkbox state to actually change to unselected
             wait.until(lambda driver: not discount_checkbox.is_selected())
             self.assertFalse(discount_checkbox.is_selected(), "Discount toggle failed to disable")
         
-        # Show final discount status
         print(f"💰 Discount: {'Enabled' if discount_needed == 'Yes' else 'Disabled'} ✓")
             
-        # Validate discount toggle final state
         final_state = discount_checkbox.is_selected()
         expected_state = (discount_needed == 'Yes')
         self.assertEqual(final_state, expected_state, 
@@ -176,14 +166,12 @@ class DessertOrderTestCase(unittest.TestCase):
         self.driver.execute_script("arguments[0].scrollIntoView({behavior: 'smooth', block: 'center'});", calculate_button)
         self.driver.execute_script("arguments[0].click();", calculate_button)
         
-        # Wait for the receipt page to load using explicit wait
         wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, ".receipt-row.subtotal .receipt-value")))
         
-        # Extract actual values from the receipt page
+        # Extract actual values
         subtotal_spans = self.driver.find_elements(By.CSS_SELECTOR, ".receipt-row.subtotal .receipt-value")
         self.assertTrue(len(subtotal_spans) > 0, "Could not find subtotal on receipt page.")
 
-        # When discount is enabled, use the last subtotal value (after discount)
         if discount_needed == 'Yes' and len(subtotal_spans) > 1:
             subtotal_text = subtotal_spans[-1].text
         else:
@@ -193,12 +181,12 @@ class DessertOrderTestCase(unittest.TestCase):
         actual_sst = self.driver.find_element(By.CSS_SELECTOR, ".receipt-row.sst .receipt-value").text.replace('RM', '').strip()
         actual_grand_total = self.driver.find_element(By.CSS_SELECTOR, ".receipt-row.grand-total .receipt-value").text.replace('RM', '').strip()
 
-        # Get expected values from CSV
+        # Get expected values
         expected_subtotal = row['Expected_Subtotal']
         expected_sst = row['Expected_SST']
         expected_grand_total = row['Expected_Grand_Total']
 
-        # Verify that actual values match expected values using Decimal for precision
+        # Verify values
         self.assertEqual(d(expected_subtotal), d(actual_subtotal), 
                         f"Subtotal mismatch: Expected '{expected_subtotal}' but got '{actual_subtotal}'")
         self.assertEqual(d(expected_sst), d(actual_sst), 
@@ -208,57 +196,316 @@ class DessertOrderTestCase(unittest.TestCase):
         
         print(f"✅ Subtotal: RM{actual_subtotal} | SST: RM{actual_sst} | Grand Total: RM{actual_grand_total}")
 
-        # Test passed - save screenshot with timestamp for easier tracking
+        # Test passed - save screenshot
         print(f"✅ Test Case {test_id}: PASS")
         timestamp = datetime.now().strftime("%Y-%m-%d_%I-%M-%S-%p")
         screenshot_file = os.path.join(SCREENSHOT_DIR, f"{test_id}_PASS_{timestamp}.png")
         self.driver.save_screenshot(screenshot_file)
         print(f"📸 Screenshot saved to {screenshot_file}")
-    
+
+    # HTML Report Generation
+    def generate_html_report(self, results, total_duration):
+        """Generates a report from the test results."""
+        print(f"\nGenerating HTML test report...")
+        
+        # Calculate stats
+        passed_count = sum(1 for r in results if r['status'] == 'PASS')
+        failed_count = sum(1 for r in results if r['status'] == 'FAIL')
+        total_tests = len(results)
+        timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+        # Build Table Rows
+        table_rows_html = ""
+        for r in results:
+            status_class = "status-pass" if r['status'] == 'PASS' else "status-fail"
+            row_class = "row-fail" if r['status'] == 'FAIL' else ""
+            icon = "✅" if r['status'] == 'PASS' else "❌"
+            details_html = (
+                f"<pre class='error-details'>{html.escape(r['details'])}</pre>" 
+                if r['status'] == 'FAIL' 
+                else 'N/A'
+            )
+            
+            table_rows_html += f"""
+                <tr class='{row_class}'>
+                    <td>{html.escape(r['id'])}</td>
+                    <td class='{status_class}'>{icon} {r['status']}</td>
+                    <td>{r['duration']:.2f} s</td>
+                    <td>{details_html}</td>
+                </tr>
+            """
+
+        # HTML & CSS Content
+        html_content = f"""
+        <!DOCTYPE html>
+        <html lang="en">
+        <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>Test Run Report - Petite Pâtisserie</title>
+            <style>
+                :root {{
+                    --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+                    --color-pass: #28a745;
+                    --color-fail: #dc3545;
+                    --color-total: #007bff;
+                    --color-time: #6c757d;
+                    --color-bg: #f4f7f6;
+                    --color-bg-light: #ffffff;
+                    --color-bg-fail-light: #fbeeee;
+                    --color-border: #e0e0e0;
+                    --color-text: #212529;
+                    --color-text-muted: #6c757d;
+                    --shadow: 0 4px 8px rgba(0,0,0,0.05);
+                    --radius: 8px;
+                }}
+                body {{
+                    font-family: var(--font-sans);
+                    background-color: var(--color-bg);
+                    color: var(--color-text);
+                    margin: 0;
+                    padding: 24px;
+                }}
+                .container {{
+                    max-width: 1200px;
+                    margin: 0 auto;
+                }}
+                h1 {{
+                    font-size: 2.25rem;
+                    color: var(--color-text);
+                    border-bottom: 2px solid var(--color-border);
+                    padding-bottom: 10px;
+                    margin-bottom: 16px;
+                }}
+                .report-meta {{
+                    font-size: 0.9rem;
+                    color: var(--color-text-muted);
+                    margin-bottom: 24px;
+                }}
+                h2 {{
+                    font-size: 1.75rem;
+                    margin-bottom: 16px;
+                }}
+                .summary-container {{
+                    display: flex;
+                    flex-wrap: wrap;
+                    gap: 20px;
+                    margin-bottom: 32px;
+                }}
+                .summary-card {{
+                    background: var(--color-bg-light);
+                    border-radius: var(--radius);
+                    box-shadow: var(--shadow);
+                    padding: 24px;
+                    flex: 1;
+                    min-width: 220px;
+                    border-top: 4px solid;
+                }}
+                .summary-card h3 {{
+                    margin: 0 0 8px 0;
+                    font-size: 1.1rem;
+                    color: var(--color-text-muted);
+                    font-weight: 600;
+                    text-transform: uppercase;
+                }}
+                .summary-card .count {{
+                    font-size: 2.5rem;
+                    font-weight: 700;
+                }}
+                .summary-card.total {{
+                    border-color: var(--color-total);
+                }}
+                .summary-card.total .count {{
+                    color: var(--color-total);
+                }}
+                .summary-card.passed {{
+                    border-color: var(--color-pass);
+                }}
+                .summary-card.passed .count {{
+                    color: var(--color-pass);
+                }}
+                .summary-card.failed {{
+                    border-color: var(--color-fail);
+                }}
+                .summary-card.failed .count {{
+                    color: var(--color-fail);
+                }}
+                .summary-card.duration {{
+                    border-color: var(--color-time);
+                }}
+                .summary-card.duration .count {{
+                    color: var(--color-time);
+                }}
+
+                .details-table {{
+                    width: 100%;
+                    border-collapse: collapse;
+                    background: var(--color-bg-light);
+                    box-shadow: var(--shadow);
+                    border-radius: var(--radius);
+                    overflow: hidden;
+                }}
+                .details-table th,
+                .details-table td {{
+                    border: 1px solid var(--color-border);
+                    padding: 12px 16px;
+                    text-align: left;
+                    vertical-align: top;
+                }}
+                .details-table thead {{
+                    background-color: #f8f9fa;
+                }}
+                .details-table th {{
+                    font-weight: 600;
+                }}
+                .details-table tr:hover {{
+                    background-color: #f1f1f1;
+                }}
+                .status-pass {{
+                    color: var(--color-pass);
+                    font-weight: 700;
+                }}
+                .status-fail {{
+                    color: var(--color-fail);
+                    font-weight: 700;
+                }}
+                .row-fail {{
+                    background-color: var(--color-bg-fail-light);
+                }}
+                .error-details {{
+                    background: #fff0f0;
+                    border: 1px solid var(--color-fail);
+                    color: var(--color-fail);
+                    padding: 10px;
+                    border-radius: 4px;
+                    font-family: monospace;
+                    font-size: 0.85rem;
+                    white-space: pre-wrap;
+                    word-break: break-all;
+                    margin: 0;
+                }}
+            </style>
+        </head>
+        <body>
+            <div class="container">
+                <h1>Test Run Report</h1>
+                <p class="report-meta">
+                    <strong>Project:</strong> Petite Pâtisserie<br>
+                    <strong>Generated on:</strong> {timestamp}
+                </p>
+
+                <h2>Run Summary</h2>
+                <div class="summary-container">
+                    <div class="summary-card total">
+                        <h3>📦 Total Tests</h3>
+                        <p class="count">{total_tests}</p>
+                    </div>
+                    <div class="summary-card passed">
+                        <h3>✅ Passed</h3>
+                        <p class="count">{passed_count}</p>
+                    </div>
+                    <div class="summary-card failed">
+                        <h3>❌ Failed</h3>
+                        <p class="count">{failed_count}</p>
+                    </div>
+                    <div class="summary-card duration">
+                        <h3>⏱️ Total Duration</h3>
+                        <p class="count">{total_duration:.2f} s</p>
+                    </div>
+                </div>
+
+                <h2>Test Details</h2>
+                <table class="details-table">
+                    <thead>
+                        <tr>
+                            <th>Test ID</th>
+                            <th>Status</th>
+                            <th>Duration</th>
+                            <th>Details</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {table_rows_html}
+                    </tbody>
+                </table>
+            </div>
+        </body>
+        </html>
+        """
+
+        # Write the content to the report file
+        try:
+            # REPORT_FILE is now just "test_report.html",
+            # saving it in the CWD
+            with open(REPORT_FILE, 'w', encoding='utf-8') as f:
+                f.write(html_content)
+            print(f"📊 HTML Test Report generated: {REPORT_FILE}")
+        except Exception as e:
+            print(f"⚠️ Could not write HTML report: {e}")
+
+    # Main Test Execution Method
     def test_all_dessert_orders(self):
-        """Run all test cases from CSV"""
+        """Run all test cases from CSV and generate a report"""
         test_results_summary = []
+        overall_start_time = time.time()
         
         for row in self.test_cases:
             test_id = row['Test_ID']
+            test_start_time = time.time()
             
             try:
                 self.run_single_test_case(row)
-                test_results_summary.append((test_id, "PASS", "N/A"))
+                test_end_time = time.time()
+                duration = test_end_time - test_start_time
+                test_results_summary.append({
+                    'id': test_id, 
+                    'status': 'PASS', 
+                    'details': 'N/A', 
+                    'duration': duration
+                })
                 
             except (AssertionError, NoSuchElementException, TimeoutException, Exception) as e:
-                # Test failed - save screenshot and log full error
+                test_end_time = time.time()
+                duration = test_end_time - test_start_time
                 full_error = traceback.format_exc()
                 
                 print(f"❌ Test Case {test_id}: FAIL")
                 print(f"⚠️ Error: {e}")
                 
-                # Log full error details to file for debugging
                 log_error_to_file(test_id, full_error)
                 
-                # Save screenshot with timestamp for easier tracking
                 timestamp = datetime.now().strftime("%Y-%m-%d_%I-%M-%S-%p")
                 screenshot_file = os.path.join(SCREENSHOT_DIR, f"{test_id}_FAIL_{timestamp}.png")
                 self.driver.save_screenshot(screenshot_file)
                 print(f"📸 Screenshot saved to {screenshot_file}")
                 print(f"📝 Full error log saved to {ERROR_LOG_FILE}")
                 
-                # Store first line of error for summary
                 error_summary = str(e).splitlines()[0] if str(e).splitlines() else str(e)
-                test_results_summary.append((test_id, "FAIL", error_summary))
+                test_results_summary.append({
+                    'id': test_id,
+                    'status': 'FAIL',
+                    'details': error_summary,
+                    'duration': duration
+                })
         
-        # Print summary report
+        # Console Summary
+        overall_end_time = time.time()
+        total_duration = overall_end_time - overall_start_time
+        
         print("\n\n" + "=" * 60)
-        print("                 TEST RUN SUMMARY")
+        print("                 TEST RUN SUMMARY (Console)")
         print("=" * 60)
-        print(f"{'Test ID':<10} | {'Status':<10} | {'Details':<30}")
+        print(f"{'Test ID':<10} | {'Status':<10} | {'Duration (s)':<15} | {'Details':<30}")
         print("-" * 60)
         
         failed_count = 0
         for result in test_results_summary:
-            test_id, status, details = result
+            test_id = result['id']
+            status = result['status']
+            details = result['details']
+            duration = result['duration']
             status_icon = "✅" if status == "PASS" else "❌"
-            print(f"{test_id:<10} | {status_icon} {status:<8} | {details:<30}")
+            print(f"{test_id:<10} | {status_icon} {status:<8} | {duration:<15.2f} | {details:<30}")
             if status == "FAIL":
                 failed_count += 1
         
@@ -266,9 +513,12 @@ class DessertOrderTestCase(unittest.TestCase):
         total_tests = len(test_results_summary)
         passed_count = total_tests - failed_count
         print(f"Total Tests: {total_tests}, Passed: {passed_count}, Failed: {failed_count}")
+        print(f"Total Duration: {total_duration:.2f} seconds")
         print("=" * 60)
         
-        # Assert that all tests passed
+        # Generate HTML Report
+        self.generate_html_report(test_results_summary, total_duration)
+        
         self.assertEqual(failed_count, 0, f"{failed_count} test case(s) failed")
 
 
@@ -277,14 +527,10 @@ if __name__ == "__main__":
     print("🚀 Running tests in GitHub Actions environment...")
     print("=" * 60)
     
-    # Create test suite
     suite = unittest.TestLoader().loadTestsFromTestCase(DessertOrderTestCase)
-    
-    # Run tests
     runner = unittest.TextTestRunner(verbosity=2)
     result = runner.run(suite)
     
-    # Exit with appropriate code
     if result.wasSuccessful():
         print("\n🎉 Result: All test cases passed! 🎉")
         sys.exit(0)

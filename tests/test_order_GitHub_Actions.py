@@ -207,7 +207,7 @@ class DessertOrderTestCase(unittest.TestCase):
     def generate_html_report(self, results, total_duration):
         """Generates a report from the test results."""
         print(f"\nGenerating HTML test report...")
-    
+        
         # Calculate stats
         passed_count = sum(1 for r in results if r['status'] == 'PASS')
         failed_count = sum(1 for r in results if r['status'] == 'FAIL')
@@ -217,7 +217,11 @@ class DessertOrderTestCase(unittest.TestCase):
         # Calculate percentages for visual elements
         pass_percentage = (passed_count / total_tests * 100) if total_tests > 0 else 0
         fail_percentage = (failed_count / total_tests * 100) if total_tests > 0 else 0
-    
+        
+        # Prepare conditional display text for progress bars
+        pass_text = f'{pass_percentage:.1f}%' if pass_percentage >= 5 else ''
+        fail_text = f'{fail_percentage:.1f}%' if fail_percentage >= 5 else ''
+
         # Build Table Rows
         table_rows_html = ""
         for r in results:
@@ -238,8 +242,8 @@ class DessertOrderTestCase(unittest.TestCase):
                     <td>{details_html}</td>
                 </tr>
             """
-    
-        # HTML & CSS Content with IMPROVED Visual Elements
+
+        # HTML & CSS Content
         html_content = f"""
         <!DOCTYPE html>
         <html lang="en">
@@ -343,7 +347,7 @@ class DessertOrderTestCase(unittest.TestCase):
                 .summary-card.duration .count {{
                     color: var(--color-time);
                 }}
-    
+
                 /* Visual Chart Section */
                 .visual-section {{
                     display: flex;
@@ -430,7 +434,7 @@ class DessertOrderTestCase(unittest.TestCase):
                     overflow: hidden;
                     position: relative;
                 }}
-                /* Empty state styling */
+                /* Empty state styling - shows "0%" on the left */
                 .progress-bar-bg.empty::after {{
                     content: '0%';
                     position: absolute;
@@ -451,11 +455,6 @@ class DessertOrderTestCase(unittest.TestCase):
                     font-size: 0.85rem;
                     font-weight: 700;
                     transition: width 0.5s ease;
-                    min-width: 0%;
-                }}
-                /* Hide text when width is too small */
-                .progress-bar.hidden-text {{
-                    font-size: 0;
                 }}
                 .progress-bar.pass {{
                     background-color: var(--color-pass);
@@ -463,7 +462,7 @@ class DessertOrderTestCase(unittest.TestCase):
                 .progress-bar.fail {{
                     background-color: var(--color-fail);
                 }}
-    
+
                 /* Table Styles */
                 .details-table {{
                     width: 100%;
@@ -521,7 +520,7 @@ class DessertOrderTestCase(unittest.TestCase):
                     <strong>Project:</strong> Petite Pâtisserie<br>
                     <strong>Generated on:</strong> {timestamp}
                 </p>
-    
+
                 <h2>Run Summary</h2>
                 <div class="summary-container">
                     <div class="summary-card total">
@@ -541,7 +540,7 @@ class DessertOrderTestCase(unittest.TestCase):
                         <p class="count">{total_duration:.2f} s</p>
                     </div>
                 </div>
-    
+
                 <h2>Visual Test Results</h2>
                 <div class="visual-section">
                     <!-- Pie Chart -->
@@ -568,9 +567,9 @@ class DessertOrderTestCase(unittest.TestCase):
                                 <span>Passed Tests</span>
                                 <span>{passed_count} of {total_tests}</span>
                             </div>
-                            <div class="progress-bar-bg{'empty' if pass_percentage == 0 else ''}">
-                                <div class="progress-bar pass{' hidden-text' if pass_percentage < 5 else ''}" style="width: {pass_percentage}%;">
-                                    {pass_percentage:.1f}% if pass_percentage >= 5 else ''
+                            <div class="progress-bar-bg{' empty' if pass_percentage == 0 else ''}">
+                                <div class="progress-bar pass" style="width: {pass_percentage}%;">
+                                    {pass_text}
                                 </div>
                             </div>
                         </div>
@@ -580,14 +579,14 @@ class DessertOrderTestCase(unittest.TestCase):
                                 <span>{failed_count} of {total_tests}</span>
                             </div>
                             <div class="progress-bar-bg{' empty' if fail_percentage == 0 else ''}">
-                                <div class="progress-bar fail{' hidden-text' if fail_percentage < 5 else ''}" style="width: {fail_percentage}%;">
-                                    {f'{fail_percentage:.1f}%' if fail_percentage >= 5 else ''}
+                                <div class="progress-bar fail" style="width: {fail_percentage}%;">
+                                    {fail_text}
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
-    
+
                 <h2>Test Details</h2>
                 <table class="details-table">
                     <thead>
@@ -606,7 +605,7 @@ class DessertOrderTestCase(unittest.TestCase):
         </body>
         </html>
         """
-    
+
         # Write the content to the report file
         try:
             with open(REPORT_FILE, 'w', encoding='utf-8') as f:

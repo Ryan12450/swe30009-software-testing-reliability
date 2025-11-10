@@ -239,7 +239,7 @@ class DessertOrderTestCase(unittest.TestCase):
                 </tr>
             """
     
-        # HTML & CSS Content with Visual Elements
+        # HTML & CSS Content with IMPROVED Visual Elements
         html_content = f"""
         <!DOCTYPE html>
         <html lang="en">
@@ -400,7 +400,7 @@ class DessertOrderTestCase(unittest.TestCase):
                     background-color: var(--color-fail);
                 }}
                 
-                /* Progress Bars */
+                /* Progress Bars - IMPROVED for 0% display */
                 .progress-container {{
                     background: var(--color-bg-light);
                     border-radius: var(--radius);
@@ -428,6 +428,18 @@ class DessertOrderTestCase(unittest.TestCase):
                     border-radius: 10px;
                     height: 24px;
                     overflow: hidden;
+                    position: relative;
+                }}
+                /* Empty state styling */
+                .progress-bar-bg.empty::after {{
+                    content: '0%';
+                    position: absolute;
+                    left: 12px;
+                    top: 50%;
+                    transform: translateY(-50%);
+                    color: #adb5bd;
+                    font-size: 0.85rem;
+                    font-weight: 600;
                 }}
                 .progress-bar {{
                     height: 100%;
@@ -439,6 +451,11 @@ class DessertOrderTestCase(unittest.TestCase):
                     font-size: 0.85rem;
                     font-weight: 700;
                     transition: width 0.5s ease;
+                    min-width: 0%;
+                }}
+                /* Hide text when width is too small */
+                .progress-bar.hidden-text {{
+                    font-size: 0;
                 }}
                 .progress-bar.pass {{
                     background-color: var(--color-pass);
@@ -543,7 +560,7 @@ class DessertOrderTestCase(unittest.TestCase):
                         </div>
                     </div>
                     
-                    <!-- Progress Bars -->
+                    <!-- Progress Bars with IMPROVED 0% handling -->
                     <div class="progress-container">
                         <h3>📈 Test Statistics</h3>
                         <div class="progress-item">
@@ -551,9 +568,9 @@ class DessertOrderTestCase(unittest.TestCase):
                                 <span>Passed Tests</span>
                                 <span>{passed_count} of {total_tests}</span>
                             </div>
-                            <div class="progress-bar-bg">
-                                <div class="progress-bar pass" style="width: {pass_percentage}%;">
-                                    {pass_percentage:.1f}%
+                            <div class="progress-bar-bg{'empty' if pass_percentage == 0 else ''}">
+                                <div class="progress-bar pass{' hidden-text' if pass_percentage < 5 else ''}" style="width: {pass_percentage}%;">
+                                    {pass_percentage:.1f}% if pass_percentage >= 5 else ''
                                 </div>
                             </div>
                         </div>
@@ -562,9 +579,9 @@ class DessertOrderTestCase(unittest.TestCase):
                                 <span>Failed Tests</span>
                                 <span>{failed_count} of {total_tests}</span>
                             </div>
-                            <div class="progress-bar-bg">
-                                <div class="progress-bar fail" style="width: {fail_percentage}%;">
-                                    {fail_percentage:.1f}%
+                            <div class="progress-bar-bg{' empty' if fail_percentage == 0 else ''}">
+                                <div class="progress-bar fail{' hidden-text' if fail_percentage < 5 else ''}" style="width: {fail_percentage}%;">
+                                    {f'{fail_percentage:.1f}%' if fail_percentage >= 5 else ''}
                                 </div>
                             </div>
                         </div>
@@ -592,8 +609,6 @@ class DessertOrderTestCase(unittest.TestCase):
     
         # Write the content to the report file
         try:
-            # REPORT_FILE is now just "test_report.html",
-            # saving it in the CWD
             with open(REPORT_FILE, 'w', encoding='utf-8') as f:
                 f.write(html_content)
             print(f"📊 HTML Test Report generated: {REPORT_FILE}")

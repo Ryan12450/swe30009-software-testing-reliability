@@ -205,408 +205,576 @@ class DessertOrderTestCase(unittest.TestCase):
 
     # HTML Report Generation
     def generate_html_report(self, results, total_duration):
-        """Generates a report from the test results."""
+        """Generates an HTML test report with statistics and visualizations."""
         print(f"\nGenerating HTML test report...")
         
-        # Calculate stats
+        # Calculate statistics
         passed_count = sum(1 for r in results if r['status'] == 'PASS')
         failed_count = sum(1 for r in results if r['status'] == 'FAIL')
         total_tests = len(results)
         timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         
-        # Calculate percentages for visual elements
+        # Calculate percentages for charts
         pass_percentage = (passed_count / total_tests * 100) if total_tests > 0 else 0
         fail_percentage = (failed_count / total_tests * 100) if total_tests > 0 else 0
         
-        # Prepare conditional display text for progress bars
+        # Prepare percentage text for bar display (hide if too small)
         pass_text = f'{pass_percentage:.1f}%' if pass_percentage >= 5 else ''
         fail_text = f'{fail_percentage:.1f}%' if fail_percentage >= 5 else ''
-
-        # Build Table Rows
+        
+        # Calculate overall success rate
+        success_rate = pass_percentage
+        
+        # Calculate SVG circle parameters for donut chart
+        radius = 70
+        circumference = 2 * 3.14159 * radius
+        pass_offset = circumference - (pass_percentage / 100 * circumference)
+        fail_offset = circumference - (fail_percentage / 100 * circumference)
+        
+        # Build table rows for each test result
         table_rows_html = ""
         for r in results:
-            status_class = "status-pass" if r['status'] == 'PASS' else "status-fail"
-            row_class = "row-fail" if r['status'] == 'FAIL' else ""
-            icon = "✅" if r['status'] == 'PASS' else "❌"
-            details_html = (
-                f"<pre class='error-details'>{html.escape(r['details'])}</pre>" 
+            status_badge = "pass-badge" if r['status'] == 'PASS' else "fail-badge"
+            row_highlight = "fail-row" if r['status'] == 'FAIL' else ""
+            icon = "✓" if r['status'] == 'PASS' else "✗"
+            
+            error_display = (
+                f"<div class='error-box'>{html.escape(r['details'])}</div>" 
                 if r['status'] == 'FAIL' 
-                else 'N/A'
+                else '<span class="no-error">—</span>'
             )
             
             table_rows_html += f"""
-                <tr class='{row_class}'>
-                    <td>{html.escape(r['id'])}</td>
-                    <td class='{status_class}'>{icon} {r['status']}</td>
-                    <td>{r['duration']:.2f} s</td>
-                    <td>{details_html}</td>
+                <tr class='data-row {row_highlight}'>
+                    <td class='test-id'>{html.escape(r['id'])}</td>
+                    <td><span class='badge {status_badge}'>{icon} {r['status']}</span></td>
+                    <td class='duration-cell'>{r['duration']:.2f}s</td>
+                    <td class='details-cell'>{error_display}</td>
                 </tr>
             """
-
-        # HTML & CSS Content
+        
+        # HTML template with embedded CSS and JavaScript
         html_content = f"""
         <!DOCTYPE html>
         <html lang="en">
         <head>
             <meta charset="UTF-8">
             <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            <title>Test Run Report - Petite Pâtisserie</title>
+            <title>Testing Report - Petite Pâtisserie</title>
             <style>
-                :root {{
-                    --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-                    --color-pass: #28a745;
-                    --color-fail: #dc3545;
-                    --color-total: #007bff;
-                    --color-time: #6c757d;
-                    --color-bg: #f4f7f6;
-                    --color-bg-light: #ffffff;
-                    --color-bg-fail-light: #fbeeee;
-                    --color-border: #e0e0e0;
-                    --color-text: #212529;
-                    --color-text-muted: #6c757d;
-                    --shadow: 0 4px 8px rgba(0,0,0,0.05);
-                    --radius: 8px;
-                }}
-                body {{
-                    font-family: var(--font-sans);
-                    background-color: var(--color-bg);
-                    color: var(--color-text);
+                /* CSS Variables - Color Palette */
+                * {{
                     margin: 0;
-                    padding: 24px;
-                }}
-                .container {{
-                    max-width: 1200px;
-                    margin: 0 auto;
-                }}
-                h1 {{
-                    font-size: 2.25rem;
-                    color: var(--color-text);
-                    border-bottom: 2px solid var(--color-border);
-                    padding-bottom: 10px;
-                    margin-bottom: 16px;
-                }}
-                .report-meta {{
-                    font-size: 0.9rem;
-                    color: var(--color-text-muted);
-                    margin-bottom: 24px;
-                }}
-                h2 {{
-                    font-size: 1.75rem;
-                    margin-bottom: 16px;
-                    margin-top: 32px;
+                    padding: 0;
+                    box-sizing: border-box;
                 }}
                 
-                /* Summary Cards */
-                .summary-container {{
-                    display: flex;
-                    flex-wrap: wrap;
-                    gap: 20px;
-                    margin-bottom: 32px;
+                :root {{
+                    --gradient-primary: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                    --gradient-success: linear-gradient(135deg, #0ba360 0%, #3cba92 100%);
+                    --gradient-danger: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+                    --gradient-info: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+                    --color-purple: #667eea;
+                    --color-teal: #3cba92;
+                    --color-pink: #f5576c;
+                    --color-blue: #4facfe;
+                    --color-dark: #2d3748;
+                    --color-light: #f7fafc;
+                    --color-white: #ffffff;
+                    --color-gray: #718096;
+                    --shadow-soft: 0 10px 40px rgba(102, 126, 234, 0.15);
+                    --shadow-hover: 0 15px 50px rgba(102, 126, 234, 0.25);
                 }}
-                .summary-card {{
-                    background: var(--color-bg-light);
-                    border-radius: var(--radius);
-                    box-shadow: var(--shadow);
-                    padding: 24px;
-                    flex: 1;
-                    min-width: 220px;
-                    border-top: 4px solid;
+                
+                body {{
+                    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+                    background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
+                    min-height: 100vh;
+                    padding: 40px 20px;
+                    color: var(--color-dark);
                 }}
-                .summary-card h3 {{
-                    margin: 0 0 8px 0;
+                
+                /* Main Report Container */
+                .report-container {{
+                    max-width: 1400px;
+                    margin: 0 auto;
+                    background: rgba(255, 255, 255, 0.95);
+                    backdrop-filter: blur(10px);
+                    border-radius: 24px;
+                    padding: 40px;
+                    box-shadow: var(--shadow-soft);
+                }}
+                
+                /* Header Section */
+                .header {{
+                    text-align: center;
+                    margin-bottom: 50px;
+                    position: relative;
+                }}
+                
+                .header h1 {{
+                    font-size: 3rem;
+                    font-weight: 800;
+                    background: var(--gradient-primary);
+                    -webkit-background-clip: text;
+                    -webkit-text-fill-color: transparent;
+                    background-clip: text;
+                    margin-bottom: 10px;
+                    letter-spacing: -1px;
+                }}
+                
+                .header .subtitle {{
                     font-size: 1.1rem;
-                    color: var(--color-text-muted);
+                    color: var(--color-gray);
+                    font-weight: 500;
+                }}
+                
+                .timestamp {{
+                    display: inline-block;
+                    margin-top: 15px;
+                    padding: 8px 20px;
+                    background: var(--gradient-info);
+                    color: white;
+                    border-radius: 20px;
+                    font-size: 0.9rem;
+                    font-weight: 600;
+                }}
+                
+                /* Stats Grid Layout */
+                .stats-grid {{
+                    display: grid;
+                    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+                    gap: 25px;
+                    margin-bottom: 50px;
+                }}
+                
+                /* Individual Stat Card Styling */
+                .stat-card {{
+                    padding: 30px;
+                    border-radius: 20px;
+                    color: white;
+                    position: relative;
+                    overflow: hidden;
+                    transition: transform 0.3s ease, box-shadow 0.3s ease;
+                }}
+                
+                .stat-card:hover {{
+                    transform: translateY(-5px);
+                    box-shadow: var(--shadow-hover);
+                }}
+                
+                .stat-card.total {{
+                    background: var(--gradient-info);
+                }}
+                
+                .stat-card.passed {{
+                    background: var(--gradient-success);
+                }}
+                
+                .stat-card.failed {{
+                    background: var(--gradient-danger);
+                }}
+                
+                .stat-card.time {{
+                    background: var(--gradient-primary);
+                }}
+                
+                .stat-card .label {{
+                    font-size: 0.95rem;
+                    opacity: 0.9;
                     font-weight: 600;
                     text-transform: uppercase;
-                }}
-                .summary-card .count {{
-                    font-size: 2.5rem;
-                    font-weight: 700;
-                }}
-                .summary-card.total {{
-                    border-color: var(--color-total);
-                }}
-                .summary-card.total .count {{
-                    color: var(--color-total);
-                }}
-                .summary-card.passed {{
-                    border-color: var(--color-pass);
-                }}
-                .summary-card.passed .count {{
-                    color: var(--color-pass);
-                }}
-                .summary-card.failed {{
-                    border-color: var(--color-fail);
-                }}
-                .summary-card.failed .count {{
-                    color: var(--color-fail);
-                }}
-                .summary-card.duration {{
-                    border-color: var(--color-time);
-                }}
-                .summary-card.duration .count {{
-                    color: var(--color-time);
-                }}
-
-                /* Visual Chart Section */
-                .visual-section {{
-                    display: flex;
-                    gap: 30px;
-                    margin-bottom: 32px;
-                    flex-wrap: wrap;
+                    letter-spacing: 1px;
+                    margin-bottom: 10px;
                 }}
                 
-                /* Pie Chart */
-                .chart-container {{
-                    background: var(--color-bg-light);
-                    border-radius: var(--radius);
-                    box-shadow: var(--shadow);
-                    padding: 24px;
-                    flex: 1;
-                    min-width: 300px;
-                    text-align: center;
+                .stat-card .value {{
+                    font-size: 3rem;
+                    font-weight: 800;
+                    line-height: 1;
                 }}
-                .chart-container h3 {{
-                    margin-top: 0;
-                    color: var(--color-text);
+                
+                /* Charts Section */
+                .charts-section {{
+                    display: grid;
+                    grid-template-columns: 1fr 1.5fr;
+                    gap: 30px;
+                    margin-bottom: 50px;
                 }}
-                .pie-chart {{
+                
+                @media (max-width: 968px) {{
+                    .charts-section {{
+                        grid-template-columns: 1fr;
+                    }}
+                }}
+                
+                /* Chart Card */
+                .chart-card {{
+                    background: white;
+                    border-radius: 20px;
+                    padding: 35px;
+                    box-shadow: 0 5px 20px rgba(0,0,0,0.08);
+                }}
+                
+                .chart-card h3 {{
+                    font-size: 1.4rem;
+                    margin-bottom: 25px;
+                    color: var(--color-dark);
+                    font-weight: 700;
+                }}
+                
+                /* SVG Donut Chart Container */
+                .donut-chart {{
+                    position: relative;
                     width: 200px;
                     height: 200px;
-                    border-radius: 50%;
-                    background: conic-gradient(
-                        var(--color-pass) 0deg {pass_percentage * 3.6}deg,
-                        var(--color-fail) {pass_percentage * 3.6}deg 360deg
-                    );
-                    margin: 20px auto;
-                    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+                    margin: 30px auto;
                 }}
+                
+                .donut-chart svg {{
+                    transform: rotate(-90deg);
+                }}
+                
+                .donut-chart circle {{
+                    fill: none;
+                    stroke-width: 20;
+                }}
+                
+                .donut-bg {{
+                    stroke: #e2e8f0;
+                }}
+                
+                .donut-pass {{
+                    stroke: url(#passGradient);
+                    stroke-dasharray: {circumference};
+                    stroke-dashoffset: {pass_offset};
+                    stroke-linecap: round;
+                    transition: stroke-dashoffset 1s ease;
+                }}
+                
+                .donut-center {{
+                    position: absolute;
+                    top: 50%;
+                    left: 50%;
+                    transform: translate(-50%, -50%);
+                    text-align: center;
+                }}
+                
+                .donut-center .percentage {{
+                    font-size: 2.5rem;
+                    font-weight: 800;
+                    background: var(--gradient-success);
+                    -webkit-background-clip: text;
+                    -webkit-text-fill-color: transparent;
+                    background-clip: text;
+                }}
+                
+                .donut-center .label {{
+                    font-size: 0.85rem;
+                    color: var(--color-gray);
+                    font-weight: 600;
+                    margin-top: 5px;
+                }}
+                
                 .chart-legend {{
                     display: flex;
                     justify-content: center;
-                    gap: 20px;
-                    margin-top: 16px;
+                    gap: 30px;
+                    margin-top: 20px;
                 }}
+                
                 .legend-item {{
                     display: flex;
                     align-items: center;
-                    gap: 8px;
-                }}
-                .legend-color {{
-                    width: 20px;
-                    height: 20px;
-                    border-radius: 4px;
-                }}
-                .legend-color.pass {{
-                    background-color: var(--color-pass);
-                }}
-                .legend-color.fail {{
-                    background-color: var(--color-fail);
-                }}
-                
-                /* Progress Bars - IMPROVED for 0% display */
-                .progress-container {{
-                    background: var(--color-bg-light);
-                    border-radius: var(--radius);
-                    box-shadow: var(--shadow);
-                    padding: 24px;
-                    flex: 1;
-                    min-width: 300px;
-                }}
-                .progress-container h3 {{
-                    margin-top: 0;
-                    color: var(--color-text);
-                }}
-                .progress-item {{
-                    margin-bottom: 20px;
-                }}
-                .progress-label {{
-                    display: flex;
-                    justify-content: space-between;
-                    margin-bottom: 8px;
-                    font-size: 0.9rem;
+                    gap: 10px;
                     font-weight: 600;
                 }}
-                .progress-bar-bg {{
-                    background-color: #e9ecef;
-                    border-radius: 10px;
-                    height: 24px;
+                
+                .legend-dot {{
+                    width: 16px;
+                    height: 16px;
+                    border-radius: 50%;
+                }}
+                
+                .legend-dot.pass {{
+                    background: var(--gradient-success);
+                }}
+                
+                .legend-dot.fail {{
+                    background: var(--gradient-danger);
+                }}
+                
+                /* Horizontal Bar Charts */
+                .bar-item {{
+                    margin-bottom: 25px;
+                }}
+                
+                .bar-header {{
+                    display: flex;
+                    justify-content: space-between;
+                    margin-bottom: 10px;
+                    font-weight: 600;
+                    color: var(--color-dark);
+                }}
+                
+                .bar-track {{
+                    height: 35px;
+                    background: #e2e8f0;
+                    border-radius: 50px;
                     overflow: hidden;
                     position: relative;
                 }}
-                /* Empty state styling - shows "0%" on the left */
-                .progress-bar-bg.empty::after {{
-                    content: '0%';
+                
+                .bar-track.empty::after {{
+                    content: 'No failures';
                     position: absolute;
-                    left: 12px;
+                    left: 20px;
                     top: 50%;
                     transform: translateY(-50%);
-                    color: #adb5bd;
+                    color: var(--color-gray);
                     font-size: 0.85rem;
                     font-weight: 600;
                 }}
-                .progress-bar {{
+                
+                .bar-fill {{
                     height: 100%;
-                    border-radius: 10px;
+                    border-radius: 50px;
                     display: flex;
                     align-items: center;
-                    justify-content: center;
+                    justify-content: flex-end;
+                    padding-right: 15px;
                     color: white;
-                    font-size: 0.85rem;
                     font-weight: 700;
-                    transition: width 0.5s ease;
+                    font-size: 0.9rem;
+                    transition: width 1s cubic-bezier(0.65, 0, 0.35, 1);
                 }}
-                .progress-bar.pass {{
-                    background-color: var(--color-pass);
+                
+                .bar-fill.pass {{
+                    background: var(--gradient-success);
                 }}
-                .progress-bar.fail {{
-                    background-color: var(--color-fail);
+                
+                .bar-fill.fail {{
+                    background: var(--gradient-danger);
                 }}
-
-                /* Table Styles */
-                .details-table {{
+                
+                /* Test Results Table */
+                .results-section {{
+                    margin-top: 50px;
+                }}
+                
+                .results-section h2 {{
+                    font-size: 2rem;
+                    margin-bottom: 25px;
+                    color: var(--color-dark);
+                    font-weight: 700;
+                }}
+                
+                .results-table {{
                     width: 100%;
-                    border-collapse: collapse;
-                    background: var(--color-bg-light);
-                    box-shadow: var(--shadow);
-                    border-radius: var(--radius);
+                    border-collapse: separate;
+                    border-spacing: 0;
+                    background: white;
+                    border-radius: 16px;
                     overflow: hidden;
+                    box-shadow: 0 5px 20px rgba(0,0,0,0.08);
                 }}
-                .details-table th,
-                .details-table td {{
-                    border: 1px solid var(--color-border);
-                    padding: 12px 16px;
+                
+                .results-table thead {{
+                    background: var(--gradient-primary);
+                    color: white;
+                }}
+                
+                .results-table th {{
+                    padding: 18px 20px;
                     text-align: left;
-                    vertical-align: top;
-                }}
-                .details-table thead {{
-                    background-color: #f8f9fa;
-                }}
-                .details-table th {{
-                    font-weight: 600;
-                }}
-                .details-table tr:hover {{
-                    background-color: #f1f1f1;
-                }}
-                .status-pass {{
-                    color: var(--color-pass);
                     font-weight: 700;
+                    font-size: 0.95rem;
+                    text-transform: uppercase;
+                    letter-spacing: 0.5px;
                 }}
-                .status-fail {{
-                    color: var(--color-fail);
+                
+                .results-table td {{
+                    padding: 18px 20px;
+                    border-bottom: 1px solid #e2e8f0;
+                }}
+                
+                .data-row {{
+                    transition: background 0.2s ease;
+                }}
+                
+                .data-row:hover {{
+                    background: #f7fafc;
+                }}
+                
+                .data-row.fail-row {{
+                    background: #fff5f7;
+                }}
+                
+                .data-row.fail-row:hover {{
+                    background: #ffe5e9;
+                }}
+                
+                .test-id {{
                     font-weight: 700;
+                    color: var(--color-purple);
+                    font-family: 'Courier New', monospace;
                 }}
-                .row-fail {{
-                    background-color: var(--color-bg-fail-light);
-                }}
-                .error-details {{
-                    background: #fff0f0;
-                    border: 1px solid var(--color-fail);
-                    color: var(--color-fail);
-                    padding: 10px;
-                    border-radius: 4px;
-                    font-family: monospace;
+                
+                .badge {{
+                    display: inline-block;
+                    padding: 6px 16px;
+                    border-radius: 20px;
+                    font-weight: 700;
                     font-size: 0.85rem;
+                }}
+                
+                .pass-badge {{
+                    background: var(--gradient-success);
+                    color: white;
+                }}
+                
+                .fail-badge {{
+                    background: var(--gradient-danger);
+                    color: white;
+                }}
+                
+                .duration-cell {{
+                    font-family: 'Courier New', monospace;
+                    font-weight: 600;
+                    color: var(--color-blue);
+                }}
+                
+                .no-error {{
+                    color: var(--color-gray);
+                    font-size: 1.2rem;
+                }}
+                
+                .error-box {{
+                    background: linear-gradient(135deg, #fff5f7 0%, #ffe5e9 100%);
+                    border-left: 4px solid var(--color-pink);
+                    padding: 12px 16px;
+                    border-radius: 8px;
+                    font-family: 'Courier New', monospace;
+                    font-size: 0.85rem;
+                    color: var(--color-dark);
                     white-space: pre-wrap;
-                    word-break: break-all;
-                    margin: 0;
+                    word-break: break-word;
                 }}
             </style>
         </head>
         <body>
-            <div class="container">
-                <h1>Test Run Report</h1>
-                <p class="report-meta">
-                    <strong>Project:</strong> Petite Pâtisserie<br>
-                    <strong>Generated on:</strong> {timestamp}
-                </p>
-
-                <h2>Run Summary</h2>
-                <div class="summary-container">
-                    <div class="summary-card total">
-                        <h3>📦 Total Tests</h3>
-                        <p class="count">{total_tests}</p>
+            <div class="report-container">
+                <!-- Header -->
+                <div class="header">
+                    <h1>🧁 Test Execution Report</h1>
+                    <p class="subtitle">Petite Pâtisserie - Automated Testing Suite</p>
+                    <span class="timestamp">🕐 Generated: {timestamp}</span>
+                </div>
+                
+                <!-- Stats Cards Grid -->
+                <div class="stats-grid">
+                    <div class="stat-card total">
+                        <div class="label">Total Tests</div>
+                        <div class="value">{total_tests}</div>
                     </div>
-                    <div class="summary-card passed">
-                        <h3>✅ Passed</h3>
-                        <p class="count">{passed_count}</p>
+                    <div class="stat-card passed">
+                        <div class="label">✓ Passed</div>
+                        <div class="value">{passed_count}</div>
                     </div>
-                    <div class="summary-card failed">
-                        <h3>❌ Failed</h3>
-                        <p class="count">{failed_count}</p>
+                    <div class="stat-card failed">
+                        <div class="label">✗ Failed</div>
+                        <div class="value">{failed_count}</div>
                     </div>
-                    <div class="summary-card duration">
-                        <h3>⏱️ Total Duration</h3>
-                        <p class="count">{total_duration:.2f} s</p>
+                    <div class="stat-card time">
+                        <div class="label">Duration</div>
+                        <div class="value">{total_duration:.1f}s</div>
                     </div>
                 </div>
-
-                <h2>Visual Test Results</h2>
-                <div class="visual-section">
-                    <!-- Pie Chart -->
-                    <div class="chart-container">
-                        <h3>📊 Test Results Distribution</h3>
-                        <div class="pie-chart"></div>
+                
+                <!-- Charts Section -->
+                <div class="charts-section">
+                    <!-- Donut Chart -->
+                    <div class="chart-card">
+                        <h3>Success Rate</h3>
+                        <div class="donut-chart">
+                            <svg width="200" height="200">
+                                <defs>
+                                    <linearGradient id="passGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                                        <stop offset="0%" style="stop-color:#0ba360;stop-opacity:1" />
+                                        <stop offset="100%" style="stop-color:#3cba92;stop-opacity:1" />
+                                    </linearGradient>
+                                </defs>
+                                <circle class="donut-bg" cx="100" cy="100" r="{radius}"></circle>
+                                <circle class="donut-pass" cx="100" cy="100" r="{radius}"></circle>
+                            </svg>
+                            <div class="donut-center">
+                                <div class="percentage">{success_rate:.0f}%</div>
+                                <div class="label">Success</div>
+                            </div>
+                        </div>
                         <div class="chart-legend">
                             <div class="legend-item">
-                                <div class="legend-color pass"></div>
-                                <span>Passed ({pass_percentage:.1f}%)</span>
+                                <span class="legend-dot pass"></span>
+                                <span>Pass ({pass_percentage:.1f}%)</span>
                             </div>
                             <div class="legend-item">
-                                <div class="legend-color fail"></div>
-                                <span>Failed ({fail_percentage:.1f}%)</span>
+                                <span class="legend-dot fail"></span>
+                                <span>Fail ({fail_percentage:.1f}%)</span>
                             </div>
                         </div>
                     </div>
                     
-                    <!-- Progress Bars with IMPROVED 0% handling -->
-                    <div class="progress-container">
-                        <h3>📈 Test Statistics</h3>
-                        <div class="progress-item">
-                            <div class="progress-label">
+                    <!-- Horizontal Bar Charts -->
+                    <div class="chart-card">
+                        <h3>Detailed Breakdown</h3>
+                        <div class="bar-item">
+                            <div class="bar-header">
                                 <span>Passed Tests</span>
-                                <span>{passed_count} of {total_tests}</span>
+                                <span>{passed_count} / {total_tests}</span>
                             </div>
-                            <div class="progress-bar-bg{' empty' if pass_percentage == 0 else ''}">
-                                <div class="progress-bar pass" style="width: {pass_percentage}%;">
+                            <div class="bar-track">
+                                <div class="bar-fill pass" style="width: {pass_percentage}%;">
                                     {pass_text}
                                 </div>
                             </div>
                         </div>
-                        <div class="progress-item">
-                            <div class="progress-label">
+                        <div class="bar-item">
+                            <div class="bar-header">
                                 <span>Failed Tests</span>
-                                <span>{failed_count} of {total_tests}</span>
+                                <span>{failed_count} / {total_tests}</span>
                             </div>
-                            <div class="progress-bar-bg{' empty' if fail_percentage == 0 else ''}">
-                                <div class="progress-bar fail" style="width: {fail_percentage}%;">
+                            <div class="bar-track{' empty' if fail_percentage == 0 else ''}">
+                                <div class="bar-fill fail" style="width: {fail_percentage}%;">
                                     {fail_text}
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
-
-                <h2>Test Details</h2>
-                <table class="details-table">
-                    <thead>
-                        <tr>
-                            <th>Test ID</th>
-                            <th>Status</th>
-                            <th>Duration</th>
-                            <th>Details</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {table_rows_html}
-                    </tbody>
-                </table>
+                
+                <!-- Test Results Table -->
+                <div class="results-section">
+                    <h2>Test Case Details</h2>
+                    <table class="results-table">
+                        <thead>
+                            <tr>
+                                <th>Test ID</th>
+                                <th>Status</th>
+                                <th>Duration</th>
+                                <th>Error Details</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {table_rows_html}
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </body>
         </html>
         """
-
-        # Write the content to the report file
+        
+        # Save the report
         try:
             with open(REPORT_FILE, 'w', encoding='utf-8') as f:
                 f.write(html_content)

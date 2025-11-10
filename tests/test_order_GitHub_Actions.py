@@ -205,400 +205,400 @@ class DessertOrderTestCase(unittest.TestCase):
 
     # HTML Report Generation
     def generate_html_report(self, results, total_duration):
-    """Generates a report from the test results."""
-    print(f"\nGenerating HTML test report...")
+        """Generates a report from the test results."""
+        print(f"\nGenerating HTML test report...")
     
-    # Calculate stats
-    passed_count = sum(1 for r in results if r['status'] == 'PASS')
-    failed_count = sum(1 for r in results if r['status'] == 'FAIL')
-    total_tests = len(results)
-    timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    
-    # Calculate percentages for visual elements
-    pass_percentage = (passed_count / total_tests * 100) if total_tests > 0 else 0
-    fail_percentage = (failed_count / total_tests * 100) if total_tests > 0 else 0
-
-    # Build Table Rows
-    table_rows_html = ""
-    for r in results:
-        status_class = "status-pass" if r['status'] == 'PASS' else "status-fail"
-        row_class = "row-fail" if r['status'] == 'FAIL' else ""
-        icon = "✅" if r['status'] == 'PASS' else "❌"
-        details_html = (
-            f"<pre class='error-details'>{html.escape(r['details'])}</pre>" 
-            if r['status'] == 'FAIL' 
-            else 'N/A'
-        )
+        # Calculate stats
+        passed_count = sum(1 for r in results if r['status'] == 'PASS')
+        failed_count = sum(1 for r in results if r['status'] == 'FAIL')
+        total_tests = len(results)
+        timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         
-        table_rows_html += f"""
-            <tr class='{row_class}'>
-                <td>{html.escape(r['id'])}</td>
-                <td class='{status_class}'>{icon} {r['status']}</td>
-                <td>{r['duration']:.2f} s</td>
-                <td>{details_html}</td>
-            </tr>
-        """
-
-    # HTML & CSS Content with Visual Elements
-    html_content = f"""
-    <!DOCTYPE html>
-    <html lang="en">
-    <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Test Run Report - Petite Pâtisserie</title>
-        <style>
-            :root {{
-                --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-                --color-pass: #28a745;
-                --color-fail: #dc3545;
-                --color-total: #007bff;
-                --color-time: #6c757d;
-                --color-bg: #f4f7f6;
-                --color-bg-light: #ffffff;
-                --color-bg-fail-light: #fbeeee;
-                --color-border: #e0e0e0;
-                --color-text: #212529;
-                --color-text-muted: #6c757d;
-                --shadow: 0 4px 8px rgba(0,0,0,0.05);
-                --radius: 8px;
-            }}
-            body {{
-                font-family: var(--font-sans);
-                background-color: var(--color-bg);
-                color: var(--color-text);
-                margin: 0;
-                padding: 24px;
-            }}
-            .container {{
-                max-width: 1200px;
-                margin: 0 auto;
-            }}
-            h1 {{
-                font-size: 2.25rem;
-                color: var(--color-text);
-                border-bottom: 2px solid var(--color-border);
-                padding-bottom: 10px;
-                margin-bottom: 16px;
-            }}
-            .report-meta {{
-                font-size: 0.9rem;
-                color: var(--color-text-muted);
-                margin-bottom: 24px;
-            }}
-            h2 {{
-                font-size: 1.75rem;
-                margin-bottom: 16px;
-                margin-top: 32px;
-            }}
+        # Calculate percentages for visual elements
+        pass_percentage = (passed_count / total_tests * 100) if total_tests > 0 else 0
+        fail_percentage = (failed_count / total_tests * 100) if total_tests > 0 else 0
+    
+        # Build Table Rows
+        table_rows_html = ""
+        for r in results:
+            status_class = "status-pass" if r['status'] == 'PASS' else "status-fail"
+            row_class = "row-fail" if r['status'] == 'FAIL' else ""
+            icon = "✅" if r['status'] == 'PASS' else "❌"
+            details_html = (
+                f"<pre class='error-details'>{html.escape(r['details'])}</pre>" 
+                if r['status'] == 'FAIL' 
+                else 'N/A'
+            )
             
-            /* Summary Cards */
-            .summary-container {{
-                display: flex;
-                flex-wrap: wrap;
-                gap: 20px;
-                margin-bottom: 32px;
-            }}
-            .summary-card {{
-                background: var(--color-bg-light);
-                border-radius: var(--radius);
-                box-shadow: var(--shadow);
-                padding: 24px;
-                flex: 1;
-                min-width: 220px;
-                border-top: 4px solid;
-            }}
-            .summary-card h3 {{
-                margin: 0 0 8px 0;
-                font-size: 1.1rem;
-                color: var(--color-text-muted);
-                font-weight: 600;
-                text-transform: uppercase;
-            }}
-            .summary-card .count {{
-                font-size: 2.5rem;
-                font-weight: 700;
-            }}
-            .summary-card.total {{
-                border-color: var(--color-total);
-            }}
-            .summary-card.total .count {{
-                color: var(--color-total);
-            }}
-            .summary-card.passed {{
-                border-color: var(--color-pass);
-            }}
-            .summary-card.passed .count {{
-                color: var(--color-pass);
-            }}
-            .summary-card.failed {{
-                border-color: var(--color-fail);
-            }}
-            .summary-card.failed .count {{
-                color: var(--color-fail);
-            }}
-            .summary-card.duration {{
-                border-color: var(--color-time);
-            }}
-            .summary-card.duration .count {{
-                color: var(--color-time);
-            }}
-
-            /* Visual Chart Section */
-            .visual-section {{
-                display: flex;
-                gap: 30px;
-                margin-bottom: 32px;
-                flex-wrap: wrap;
-            }}
-            
-            /* Pie Chart */
-            .chart-container {{
-                background: var(--color-bg-light);
-                border-radius: var(--radius);
-                box-shadow: var(--shadow);
-                padding: 24px;
-                flex: 1;
-                min-width: 300px;
-                text-align: center;
-            }}
-            .chart-container h3 {{
-                margin-top: 0;
-                color: var(--color-text);
-            }}
-            .pie-chart {{
-                width: 200px;
-                height: 200px;
-                border-radius: 50%;
-                background: conic-gradient(
-                    var(--color-pass) 0deg {pass_percentage * 3.6}deg,
-                    var(--color-fail) {pass_percentage * 3.6}deg 360deg
-                );
-                margin: 20px auto;
-                box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-            }}
-            .chart-legend {{
-                display: flex;
-                justify-content: center;
-                gap: 20px;
-                margin-top: 16px;
-            }}
-            .legend-item {{
-                display: flex;
-                align-items: center;
-                gap: 8px;
-            }}
-            .legend-color {{
-                width: 20px;
-                height: 20px;
-                border-radius: 4px;
-            }}
-            .legend-color.pass {{
-                background-color: var(--color-pass);
-            }}
-            .legend-color.fail {{
-                background-color: var(--color-fail);
-            }}
-            
-            /* Progress Bars */
-            .progress-container {{
-                background: var(--color-bg-light);
-                border-radius: var(--radius);
-                box-shadow: var(--shadow);
-                padding: 24px;
-                flex: 1;
-                min-width: 300px;
-            }}
-            .progress-container h3 {{
-                margin-top: 0;
-                color: var(--color-text);
-            }}
-            .progress-item {{
-                margin-bottom: 20px;
-            }}
-            .progress-label {{
-                display: flex;
-                justify-content: space-between;
-                margin-bottom: 8px;
-                font-size: 0.9rem;
-                font-weight: 600;
-            }}
-            .progress-bar-bg {{
-                background-color: #e9ecef;
-                border-radius: 10px;
-                height: 24px;
-                overflow: hidden;
-            }}
-            .progress-bar {{
-                height: 100%;
-                border-radius: 10px;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                color: white;
-                font-size: 0.85rem;
-                font-weight: 700;
-                transition: width 0.5s ease;
-            }}
-            .progress-bar.pass {{
-                background-color: var(--color-pass);
-            }}
-            .progress-bar.fail {{
-                background-color: var(--color-fail);
-            }}
-
-            /* Table Styles */
-            .details-table {{
-                width: 100%;
-                border-collapse: collapse;
-                background: var(--color-bg-light);
-                box-shadow: var(--shadow);
-                border-radius: var(--radius);
-                overflow: hidden;
-            }}
-            .details-table th,
-            .details-table td {{
-                border: 1px solid var(--color-border);
-                padding: 12px 16px;
-                text-align: left;
-                vertical-align: top;
-            }}
-            .details-table thead {{
-                background-color: #f8f9fa;
-            }}
-            .details-table th {{
-                font-weight: 600;
-            }}
-            .details-table tr:hover {{
-                background-color: #f1f1f1;
-            }}
-            .status-pass {{
-                color: var(--color-pass);
-                font-weight: 700;
-            }}
-            .status-fail {{
-                color: var(--color-fail);
-                font-weight: 700;
-            }}
-            .row-fail {{
-                background-color: var(--color-bg-fail-light);
-            }}
-            .error-details {{
-                background: #fff0f0;
-                border: 1px solid var(--color-fail);
-                color: var(--color-fail);
-                padding: 10px;
-                border-radius: 4px;
-                font-family: monospace;
-                font-size: 0.85rem;
-                white-space: pre-wrap;
-                word-break: break-all;
-                margin: 0;
-            }}
-        </style>
-    </head>
-    <body>
-        <div class="container">
-            <h1>Test Run Report</h1>
-            <p class="report-meta">
-                <strong>Project:</strong> Petite Pâtisserie<br>
-                <strong>Generated on:</strong> {timestamp}
-            </p>
-
-            <h2>Run Summary</h2>
-            <div class="summary-container">
-                <div class="summary-card total">
-                    <h3>📦 Total Tests</h3>
-                    <p class="count">{total_tests}</p>
-                </div>
-                <div class="summary-card passed">
-                    <h3>✅ Passed</h3>
-                    <p class="count">{passed_count}</p>
-                </div>
-                <div class="summary-card failed">
-                    <h3>❌ Failed</h3>
-                    <p class="count">{failed_count}</p>
-                </div>
-                <div class="summary-card duration">
-                    <h3>⏱️ Total Duration</h3>
-                    <p class="count">{total_duration:.2f} s</p>
-                </div>
-            </div>
-
-            <h2>Visual Test Results</h2>
-            <div class="visual-section">
-                <!-- Pie Chart -->
-                <div class="chart-container">
-                    <h3>📊 Test Results Distribution</h3>
-                    <div class="pie-chart"></div>
-                    <div class="chart-legend">
-                        <div class="legend-item">
-                            <div class="legend-color pass"></div>
-                            <span>Passed ({pass_percentage:.1f}%)</span>
-                        </div>
-                        <div class="legend-item">
-                            <div class="legend-color fail"></div>
-                            <span>Failed ({fail_percentage:.1f}%)</span>
-                        </div>
-                    </div>
-                </div>
+            table_rows_html += f"""
+                <tr class='{row_class}'>
+                    <td>{html.escape(r['id'])}</td>
+                    <td class='{status_class}'>{icon} {r['status']}</td>
+                    <td>{r['duration']:.2f} s</td>
+                    <td>{details_html}</td>
+                </tr>
+            """
+    
+        # HTML & CSS Content with Visual Elements
+        html_content = f"""
+        <!DOCTYPE html>
+        <html lang="en">
+        <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>Test Run Report - Petite Pâtisserie</title>
+            <style>
+                :root {{
+                    --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+                    --color-pass: #28a745;
+                    --color-fail: #dc3545;
+                    --color-total: #007bff;
+                    --color-time: #6c757d;
+                    --color-bg: #f4f7f6;
+                    --color-bg-light: #ffffff;
+                    --color-bg-fail-light: #fbeeee;
+                    --color-border: #e0e0e0;
+                    --color-text: #212529;
+                    --color-text-muted: #6c757d;
+                    --shadow: 0 4px 8px rgba(0,0,0,0.05);
+                    --radius: 8px;
+                }}
+                body {{
+                    font-family: var(--font-sans);
+                    background-color: var(--color-bg);
+                    color: var(--color-text);
+                    margin: 0;
+                    padding: 24px;
+                }}
+                .container {{
+                    max-width: 1200px;
+                    margin: 0 auto;
+                }}
+                h1 {{
+                    font-size: 2.25rem;
+                    color: var(--color-text);
+                    border-bottom: 2px solid var(--color-border);
+                    padding-bottom: 10px;
+                    margin-bottom: 16px;
+                }}
+                .report-meta {{
+                    font-size: 0.9rem;
+                    color: var(--color-text-muted);
+                    margin-bottom: 24px;
+                }}
+                h2 {{
+                    font-size: 1.75rem;
+                    margin-bottom: 16px;
+                    margin-top: 32px;
+                }}
                 
-                <!-- Progress Bars -->
-                <div class="progress-container">
-                    <h3>📈 Test Statistics</h3>
-                    <div class="progress-item">
-                        <div class="progress-label">
-                            <span>Passed Tests</span>
-                            <span>{passed_count} of {total_tests}</span>
-                        </div>
-                        <div class="progress-bar-bg">
-                            <div class="progress-bar pass" style="width: {pass_percentage}%;">
-                                {pass_percentage:.1f}%
+                /* Summary Cards */
+                .summary-container {{
+                    display: flex;
+                    flex-wrap: wrap;
+                    gap: 20px;
+                    margin-bottom: 32px;
+                }}
+                .summary-card {{
+                    background: var(--color-bg-light);
+                    border-radius: var(--radius);
+                    box-shadow: var(--shadow);
+                    padding: 24px;
+                    flex: 1;
+                    min-width: 220px;
+                    border-top: 4px solid;
+                }}
+                .summary-card h3 {{
+                    margin: 0 0 8px 0;
+                    font-size: 1.1rem;
+                    color: var(--color-text-muted);
+                    font-weight: 600;
+                    text-transform: uppercase;
+                }}
+                .summary-card .count {{
+                    font-size: 2.5rem;
+                    font-weight: 700;
+                }}
+                .summary-card.total {{
+                    border-color: var(--color-total);
+                }}
+                .summary-card.total .count {{
+                    color: var(--color-total);
+                }}
+                .summary-card.passed {{
+                    border-color: var(--color-pass);
+                }}
+                .summary-card.passed .count {{
+                    color: var(--color-pass);
+                }}
+                .summary-card.failed {{
+                    border-color: var(--color-fail);
+                }}
+                .summary-card.failed .count {{
+                    color: var(--color-fail);
+                }}
+                .summary-card.duration {{
+                    border-color: var(--color-time);
+                }}
+                .summary-card.duration .count {{
+                    color: var(--color-time);
+                }}
+    
+                /* Visual Chart Section */
+                .visual-section {{
+                    display: flex;
+                    gap: 30px;
+                    margin-bottom: 32px;
+                    flex-wrap: wrap;
+                }}
+                
+                /* Pie Chart */
+                .chart-container {{
+                    background: var(--color-bg-light);
+                    border-radius: var(--radius);
+                    box-shadow: var(--shadow);
+                    padding: 24px;
+                    flex: 1;
+                    min-width: 300px;
+                    text-align: center;
+                }}
+                .chart-container h3 {{
+                    margin-top: 0;
+                    color: var(--color-text);
+                }}
+                .pie-chart {{
+                    width: 200px;
+                    height: 200px;
+                    border-radius: 50%;
+                    background: conic-gradient(
+                        var(--color-pass) 0deg {pass_percentage * 3.6}deg,
+                        var(--color-fail) {pass_percentage * 3.6}deg 360deg
+                    );
+                    margin: 20px auto;
+                    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+                }}
+                .chart-legend {{
+                    display: flex;
+                    justify-content: center;
+                    gap: 20px;
+                    margin-top: 16px;
+                }}
+                .legend-item {{
+                    display: flex;
+                    align-items: center;
+                    gap: 8px;
+                }}
+                .legend-color {{
+                    width: 20px;
+                    height: 20px;
+                    border-radius: 4px;
+                }}
+                .legend-color.pass {{
+                    background-color: var(--color-pass);
+                }}
+                .legend-color.fail {{
+                    background-color: var(--color-fail);
+                }}
+                
+                /* Progress Bars */
+                .progress-container {{
+                    background: var(--color-bg-light);
+                    border-radius: var(--radius);
+                    box-shadow: var(--shadow);
+                    padding: 24px;
+                    flex: 1;
+                    min-width: 300px;
+                }}
+                .progress-container h3 {{
+                    margin-top: 0;
+                    color: var(--color-text);
+                }}
+                .progress-item {{
+                    margin-bottom: 20px;
+                }}
+                .progress-label {{
+                    display: flex;
+                    justify-content: space-between;
+                    margin-bottom: 8px;
+                    font-size: 0.9rem;
+                    font-weight: 600;
+                }}
+                .progress-bar-bg {{
+                    background-color: #e9ecef;
+                    border-radius: 10px;
+                    height: 24px;
+                    overflow: hidden;
+                }}
+                .progress-bar {{
+                    height: 100%;
+                    border-radius: 10px;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    color: white;
+                    font-size: 0.85rem;
+                    font-weight: 700;
+                    transition: width 0.5s ease;
+                }}
+                .progress-bar.pass {{
+                    background-color: var(--color-pass);
+                }}
+                .progress-bar.fail {{
+                    background-color: var(--color-fail);
+                }}
+    
+                /* Table Styles */
+                .details-table {{
+                    width: 100%;
+                    border-collapse: collapse;
+                    background: var(--color-bg-light);
+                    box-shadow: var(--shadow);
+                    border-radius: var(--radius);
+                    overflow: hidden;
+                }}
+                .details-table th,
+                .details-table td {{
+                    border: 1px solid var(--color-border);
+                    padding: 12px 16px;
+                    text-align: left;
+                    vertical-align: top;
+                }}
+                .details-table thead {{
+                    background-color: #f8f9fa;
+                }}
+                .details-table th {{
+                    font-weight: 600;
+                }}
+                .details-table tr:hover {{
+                    background-color: #f1f1f1;
+                }}
+                .status-pass {{
+                    color: var(--color-pass);
+                    font-weight: 700;
+                }}
+                .status-fail {{
+                    color: var(--color-fail);
+                    font-weight: 700;
+                }}
+                .row-fail {{
+                    background-color: var(--color-bg-fail-light);
+                }}
+                .error-details {{
+                    background: #fff0f0;
+                    border: 1px solid var(--color-fail);
+                    color: var(--color-fail);
+                    padding: 10px;
+                    border-radius: 4px;
+                    font-family: monospace;
+                    font-size: 0.85rem;
+                    white-space: pre-wrap;
+                    word-break: break-all;
+                    margin: 0;
+                }}
+            </style>
+        </head>
+        <body>
+            <div class="container">
+                <h1>Test Run Report</h1>
+                <p class="report-meta">
+                    <strong>Project:</strong> Petite Pâtisserie<br>
+                    <strong>Generated on:</strong> {timestamp}
+                </p>
+    
+                <h2>Run Summary</h2>
+                <div class="summary-container">
+                    <div class="summary-card total">
+                        <h3>📦 Total Tests</h3>
+                        <p class="count">{total_tests}</p>
+                    </div>
+                    <div class="summary-card passed">
+                        <h3>✅ Passed</h3>
+                        <p class="count">{passed_count}</p>
+                    </div>
+                    <div class="summary-card failed">
+                        <h3>❌ Failed</h3>
+                        <p class="count">{failed_count}</p>
+                    </div>
+                    <div class="summary-card duration">
+                        <h3>⏱️ Total Duration</h3>
+                        <p class="count">{total_duration:.2f} s</p>
+                    </div>
+                </div>
+    
+                <h2>Visual Test Results</h2>
+                <div class="visual-section">
+                    <!-- Pie Chart -->
+                    <div class="chart-container">
+                        <h3>📊 Test Results Distribution</h3>
+                        <div class="pie-chart"></div>
+                        <div class="chart-legend">
+                            <div class="legend-item">
+                                <div class="legend-color pass"></div>
+                                <span>Passed ({pass_percentage:.1f}%)</span>
+                            </div>
+                            <div class="legend-item">
+                                <div class="legend-color fail"></div>
+                                <span>Failed ({fail_percentage:.1f}%)</span>
                             </div>
                         </div>
                     </div>
-                    <div class="progress-item">
-                        <div class="progress-label">
-                            <span>Failed Tests</span>
-                            <span>{failed_count} of {total_tests}</span>
+                    
+                    <!-- Progress Bars -->
+                    <div class="progress-container">
+                        <h3>📈 Test Statistics</h3>
+                        <div class="progress-item">
+                            <div class="progress-label">
+                                <span>Passed Tests</span>
+                                <span>{passed_count} of {total_tests}</span>
+                            </div>
+                            <div class="progress-bar-bg">
+                                <div class="progress-bar pass" style="width: {pass_percentage}%;">
+                                    {pass_percentage:.1f}%
+                                </div>
+                            </div>
                         </div>
-                        <div class="progress-bar-bg">
-                            <div class="progress-bar fail" style="width: {fail_percentage}%;">
-                                {fail_percentage:.1f}%
+                        <div class="progress-item">
+                            <div class="progress-label">
+                                <span>Failed Tests</span>
+                                <span>{failed_count} of {total_tests}</span>
+                            </div>
+                            <div class="progress-bar-bg">
+                                <div class="progress-bar fail" style="width: {fail_percentage}%;">
+                                    {fail_percentage:.1f}%
+                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
+    
+                <h2>Test Details</h2>
+                <table class="details-table">
+                    <thead>
+                        <tr>
+                            <th>Test ID</th>
+                            <th>Status</th>
+                            <th>Duration</th>
+                            <th>Details</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {table_rows_html}
+                    </tbody>
+                </table>
             </div>
-
-            <h2>Test Details</h2>
-            <table class="details-table">
-                <thead>
-                    <tr>
-                        <th>Test ID</th>
-                        <th>Status</th>
-                        <th>Duration</th>
-                        <th>Details</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {table_rows_html}
-                </tbody>
-            </table>
-        </div>
-    </body>
-    </html>
-    """
-
-    # Write the content to the report file
-    try:
-        # REPORT_FILE is now just "test_report.html",
-        # saving it in the CWD
-        with open(REPORT_FILE, 'w', encoding='utf-8') as f:
-            f.write(html_content)
-        print(f"📊 HTML Test Report generated: {REPORT_FILE}")
-    except Exception as e:
-        print(f"⚠️ Could not write HTML report: {e}")
+        </body>
+        </html>
+        """
+    
+        # Write the content to the report file
+        try:
+            # REPORT_FILE is now just "test_report.html",
+            # saving it in the CWD
+            with open(REPORT_FILE, 'w', encoding='utf-8') as f:
+                f.write(html_content)
+            print(f"📊 HTML Test Report generated: {REPORT_FILE}")
+        except Exception as e:
+            print(f"⚠️ Could not write HTML report: {e}")
 
     # Main Test Execution Method
     def test_all_dessert_orders(self):

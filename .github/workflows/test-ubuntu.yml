@@ -82,7 +82,16 @@ jobs:
         env:
           BASE_URL: http://localhost:8000/index.php
 
-      # Step 8: Upload test artifacts
+      # Step 8: Upload the HTML Test Report
+      - name: Upload Test Report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-report-ubuntu
+          path: tests/test_report.html
+          retention-days: 30
+          if-no-files-found: warn
+          
       # Save screenshots and error logs as artifacts for debugging and review
       - name: Upload test results
         if: always()

@@ -58,7 +58,10 @@ jobs:
       - name: Set up PHP
         uses: shivammathur/setup-php@v2
         with:
-          php-version: "8.1"
+            php-version: "8.1"
+            extensions: none
+            ini-values: error_reporting=E_ALL
+            coverage: none
 
       # Step 7: Start the web application
       # Start PHP server on port 8000 using Windows PowerShell commands

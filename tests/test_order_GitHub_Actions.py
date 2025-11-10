@@ -526,7 +526,7 @@ class DessertOrderTestCase(unittest.TestCase):
                 }}
                 
                 .bar-track.empty::after {{
-                    content: 'No failures';
+                    content: '0%';
                     position: absolute;
                     left: 20px;
                     top: 50%;
@@ -547,6 +547,7 @@ class DessertOrderTestCase(unittest.TestCase):
                     font-weight: 700;
                     font-size: 0.9rem;
                     transition: width 1s cubic-bezier(0.65, 0, 0.35, 1);
+                    min-width: 0;
                 }}
                 
                 .bar-fill.pass {{

@@ -253,16 +253,18 @@ class DessertOrderTestCase(unittest.TestCase):
                 </tr>
             """
         
-        # HTML template with embedded CSS and JavaScript
+        # HTML template
         html_content = f"""
         <!DOCTYPE html>
         <html lang="en">
         <head>
             <meta charset="UTF-8">
             <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            <title>Testing Report - Petite Pâtisserie</title>
+            <title>Test Report - Petite Pâtisserie</title>
+            <link rel="preconnect" href="https://fonts.googleapis.com">
+            <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+            <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
             <style>
-                /* CSS Variables - Color Palette */
                 * {{
                     margin: 0;
                     padding: 0;
@@ -270,127 +272,129 @@ class DessertOrderTestCase(unittest.TestCase):
                 }}
                 
                 :root {{
-                    --gradient-primary: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-                    --gradient-success: linear-gradient(135deg, #0ba360 0%, #3cba92 100%);
-                    --gradient-danger: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-                    --gradient-info: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
-                    --color-purple: #667eea;
-                    --color-teal: #3cba92;
-                    --color-pink: #f5576c;
-                    --color-blue: #4facfe;
-                    --color-dark: #2d3748;
-                    --color-light: #f7fafc;
-                    --color-white: #ffffff;
-                    --color-gray: #718096;
-                    --shadow-soft: 0 10px 40px rgba(102, 126, 234, 0.15);
-                    --shadow-hover: 0 15px 50px rgba(102, 126, 234, 0.25);
+                    --primary-color: #2563eb;
+                    --primary-dark: #1e40af;
+                    --success-color: #10b981;
+                    --success-light: #d1fae5;
+                    --danger-color: #ef4444;
+                    --danger-light: #fee2e2;
+                    --gray-50: #f9fafb;
+                    --gray-100: #f3f4f6;
+                    --gray-200: #e5e7eb;
+                    --gray-300: #d1d5db;
+                    --gray-400: #9ca3af;
+                    --gray-500: #6b7280;
+                    --gray-600: #4b5563;
+                    --gray-700: #374151;
+                    --gray-800: #1f2937;
+                    --gray-900: #111827;
+                    --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+                    --shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+                    --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+                    --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+                    --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
                 }}
                 
                 body {{
                     font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-                    background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
-                    min-height: 100vh;
-                    padding: 40px 20px;
-                    color: var(--color-dark);
+                    background: var(--gray-50);
+                    color: var(--gray-900);
+                    line-height: 1.6;
+                    padding: 2rem 1rem;
                 }}
                 
-                /* Main Report Container */
                 .report-container {{
                     max-width: 1400px;
                     margin: 0 auto;
-                    background: rgba(255, 255, 255, 0.95);
-                    backdrop-filter: blur(10px);
-                    border-radius: 24px;
-                    padding: 40px;
-                    box-shadow: var(--shadow-soft);
                 }}
                 
                 /* Header Section */
                 .header {{
-                    text-align: center;
-                    margin-bottom: 50px;
-                    position: relative;
+                    background: white;
+                    padding: 2.5rem 2rem;
+                    border-radius: 12px;
+                    margin-bottom: 2rem;
+                    box-shadow: var(--shadow);
+                    border-left: 4px solid var(--primary-color);
                 }}
                 
                 .header h1 {{
-                    font-size: 3rem;
-                    font-weight: 800;
-                    background: var(--gradient-primary);
-                    -webkit-background-clip: text;
-                    -webkit-text-fill-color: transparent;
-                    background-clip: text;
-                    margin-bottom: 10px;
-                    letter-spacing: -1px;
+                    font-size: 2rem;
+                    font-weight: 700;
+                    color: var(--gray-900);
+                    margin-bottom: 0.5rem;
                 }}
                 
                 .header .subtitle {{
-                    font-size: 1.1rem;
-                    color: var(--color-gray);
+                    font-size: 1rem;
+                    color: var(--gray-600);
                     font-weight: 500;
+                    margin-bottom: 1rem;
                 }}
                 
                 .timestamp {{
-                    display: inline-block;
-                    margin-top: 15px;
-                    padding: 8px 20px;
-                    background: var(--gradient-info);
-                    color: white;
-                    border-radius: 20px;
-                    font-size: 0.9rem;
-                    font-weight: 600;
+                    display: inline-flex;
+                    align-items: center;
+                    gap: 0.5rem;
+                    padding: 0.5rem 1rem;
+                    background: var(--gray-100);
+                    color: var(--gray-700);
+                    border-radius: 6px;
+                    font-size: 0.875rem;
+                    font-weight: 500;
                 }}
                 
-                /* Stats Grid Layout */
+                /* Stats Grid */
                 .stats-grid {{
                     display: grid;
                     grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-                    gap: 25px;
-                    margin-bottom: 50px;
+                    gap: 1.5rem;
+                    margin-bottom: 2rem;
                 }}
                 
-                /* Individual Stat Card Styling */
                 .stat-card {{
-                    padding: 30px;
-                    border-radius: 20px;
-                    color: white;
-                    position: relative;
-                    overflow: hidden;
-                    transition: transform 0.3s ease, box-shadow 0.3s ease;
+                    background: white;
+                    padding: 1.5rem;
+                    border-radius: 12px;
+                    box-shadow: var(--shadow);
+                    border-left: 4px solid;
+                    transition: transform 0.2s ease, box-shadow 0.2s ease;
                 }}
                 
                 .stat-card:hover {{
-                    transform: translateY(-5px);
-                    box-shadow: var(--shadow-hover);
+                    transform: translateY(-2px);
+                    box-shadow: var(--shadow-lg);
                 }}
                 
                 .stat-card.total {{
-                    background: var(--gradient-info);
+                    border-color: var(--primary-color);
                 }}
                 
                 .stat-card.passed {{
-                    background: var(--gradient-success);
+                    border-color: var(--success-color);
                 }}
                 
                 .stat-card.failed {{
-                    background: var(--gradient-danger);
+                    border-color: var(--danger-color);
                 }}
                 
                 .stat-card.time {{
-                    background: var(--gradient-primary);
+                    border-color: var(--gray-500);
                 }}
                 
                 .stat-card .label {{
-                    font-size: 0.95rem;
-                    opacity: 0.9;
+                    font-size: 0.875rem;
                     font-weight: 600;
+                    color: var(--gray-600);
                     text-transform: uppercase;
-                    letter-spacing: 1px;
-                    margin-bottom: 10px;
+                    letter-spacing: 0.05em;
+                    margin-bottom: 0.5rem;
                 }}
                 
                 .stat-card .value {{
-                    font-size: 3rem;
-                    font-weight: 800;
+                    font-size: 2.5rem;
+                    font-weight: 700;
+                    color: var(--gray-900);
                     line-height: 1;
                 }}
                 
@@ -398,8 +402,8 @@ class DessertOrderTestCase(unittest.TestCase):
                 .charts-section {{
                     display: grid;
                     grid-template-columns: 1fr 1.5fr;
-                    gap: 30px;
-                    margin-bottom: 50px;
+                    gap: 1.5rem;
+                    margin-bottom: 2rem;
                 }}
                 
                 @media (max-width: 968px) {{
@@ -408,27 +412,26 @@ class DessertOrderTestCase(unittest.TestCase):
                     }}
                 }}
                 
-                /* Chart Card */
                 .chart-card {{
                     background: white;
-                    border-radius: 20px;
-                    padding: 35px;
-                    box-shadow: 0 5px 20px rgba(0,0,0,0.08);
+                    border-radius: 12px;
+                    padding: 2rem;
+                    box-shadow: var(--shadow);
                 }}
                 
                 .chart-card h3 {{
-                    font-size: 1.4rem;
-                    margin-bottom: 25px;
-                    color: var(--color-dark);
+                    font-size: 1.25rem;
                     font-weight: 700;
+                    color: var(--gray-900);
+                    margin-bottom: 1.5rem;
                 }}
                 
-                /* SVG Donut Chart Container */
+                /* Donut Chart */
                 .donut-chart {{
                     position: relative;
                     width: 200px;
                     height: 200px;
-                    margin: 30px auto;
+                    margin: 2rem auto;
                 }}
                 
                 .donut-chart svg {{
@@ -441,11 +444,11 @@ class DessertOrderTestCase(unittest.TestCase):
                 }}
                 
                 .donut-bg {{
-                    stroke: #e2e8f0;
+                    stroke: var(--gray-200);
                 }}
                 
                 .donut-pass {{
-                    stroke: url(#passGradient);
+                    stroke: var(--success-color);
                     stroke-dasharray: {circumference};
                     stroke-dashoffset: {pass_offset};
                     stroke-linecap: round;
@@ -463,64 +466,68 @@ class DessertOrderTestCase(unittest.TestCase):
                 .donut-center .percentage {{
                     font-size: 2.5rem;
                     font-weight: 800;
-                    background: var(--gradient-success);
-                    -webkit-background-clip: text;
-                    -webkit-text-fill-color: transparent;
-                    background-clip: text;
+                    color: var(--gray-900);
                 }}
                 
                 .donut-center .label {{
-                    font-size: 0.85rem;
-                    color: var(--color-gray);
+                    font-size: 0.875rem;
+                    color: var(--gray-600);
                     font-weight: 600;
-                    margin-top: 5px;
+                    margin-top: 0.25rem;
                 }}
                 
                 .chart-legend {{
                     display: flex;
                     justify-content: center;
-                    gap: 30px;
-                    margin-top: 20px;
+                    gap: 2rem;
+                    margin-top: 1.5rem;
                 }}
                 
                 .legend-item {{
                     display: flex;
                     align-items: center;
-                    gap: 10px;
-                    font-weight: 600;
+                    gap: 0.5rem;
+                    font-size: 0.875rem;
+                    font-weight: 500;
+                    color: var(--gray-700);
                 }}
                 
                 .legend-dot {{
-                    width: 16px;
-                    height: 16px;
+                    width: 14px;
+                    height: 14px;
                     border-radius: 50%;
                 }}
                 
                 .legend-dot.pass {{
-                    background: var(--gradient-success);
+                    background: var(--success-color);
                 }}
                 
                 .legend-dot.fail {{
-                    background: var(--gradient-danger);
+                    background: var(--danger-color);
                 }}
                 
-                /* Horizontal Bar Charts */
+                /* Bar Charts */
                 .bar-item {{
-                    margin-bottom: 25px;
+                    margin-bottom: 2rem;
+                }}
+                
+                .bar-item:last-child {{
+                    margin-bottom: 0;
                 }}
                 
                 .bar-header {{
                     display: flex;
                     justify-content: space-between;
-                    margin-bottom: 10px;
+                    margin-bottom: 0.5rem;
                     font-weight: 600;
-                    color: var(--color-dark);
+                    color: var(--gray-700);
+                    font-size: 0.875rem;
                 }}
                 
                 .bar-track {{
-                    height: 35px;
-                    background: #e2e8f0;
-                    border-radius: 50px;
+                    height: 32px;
+                    background: var(--gray-100);
+                    border-radius: 8px;
                     overflow: hidden;
                     position: relative;
                 }}
@@ -528,11 +535,11 @@ class DessertOrderTestCase(unittest.TestCase):
                 .bar-track.empty::after {{
                     content: '0%';
                     position: absolute;
-                    left: 20px;
+                    left: 1rem;
                     top: 50%;
                     transform: translateY(-50%);
-                    color: var(--color-gray);
-                    font-size: 0.85rem;
+                    color: var(--gray-500);
+                    font-size: 0.875rem;
                     font-weight: 600;
                 }}
                 
@@ -542,127 +549,154 @@ class DessertOrderTestCase(unittest.TestCase):
                 
                 .bar-fill {{
                     height: 100%;
-                    border-radius: 50px;
                     display: flex;
                     align-items: center;
                     justify-content: flex-end;
-                    padding-right: 15px;
+                    padding: 0 1rem;
                     color: white;
-                    font-weight: 700;
-                    font-size: 0.9rem;
+                    font-weight: 600;
+                    font-size: 0.875rem;
                     transition: width 1s cubic-bezier(0.65, 0, 0.35, 1);
+                    border-radius: 8px;
                 }}
                 
                 .bar-fill.pass {{
-                    background: var(--gradient-success);
+                    background: var(--success-color);
                 }}
                 
                 .bar-fill.fail {{
-                    background: var(--gradient-danger);
+                    background: var(--danger-color);
                 }}
                 
-                /* Test Results Table */
+                /* Results Table */
                 .results-section {{
-                    margin-top: 50px;
+                    margin-top: 2rem;
                 }}
                 
                 .results-section h2 {{
-                    font-size: 2rem;
-                    margin-bottom: 25px;
-                    color: var(--color-dark);
+                    font-size: 1.5rem;
                     font-weight: 700;
+                    color: var(--gray-900);
+                    margin-bottom: 1.5rem;
+                }}
+                
+                .table-container {{
+                    background: white;
+                    border-radius: 12px;
+                    box-shadow: var(--shadow);
+                    overflow: hidden;
                 }}
                 
                 .results-table {{
                     width: 100%;
-                    border-collapse: separate;
-                    border-spacing: 0;
-                    background: white;
-                    border-radius: 16px;
-                    overflow: hidden;
-                    box-shadow: 0 5px 20px rgba(0,0,0,0.08);
+                    border-collapse: collapse;
                 }}
                 
                 .results-table thead {{
-                    background: var(--gradient-primary);
-                    color: white;
+                    background: var(--gray-50);
+                    border-bottom: 2px solid var(--gray-200);
                 }}
                 
                 .results-table th {{
-                    padding: 18px 20px;
+                    padding: 1rem 1.5rem;
                     text-align: left;
-                    font-weight: 700;
-                    font-size: 0.95rem;
+                    font-weight: 600;
+                    font-size: 0.875rem;
+                    color: var(--gray-700);
                     text-transform: uppercase;
-                    letter-spacing: 0.5px;
+                    letter-spacing: 0.05em;
                 }}
                 
                 .results-table td {{
-                    padding: 18px 20px;
-                    border-bottom: 1px solid #e2e8f0;
+                    padding: 1rem 1.5rem;
+                    border-bottom: 1px solid var(--gray-200);
                 }}
                 
                 .data-row {{
-                    transition: background 0.2s ease;
+                    transition: background 0.15s ease;
                 }}
                 
                 .data-row:hover {{
-                    background: #f7fafc;
+                    background: var(--gray-50);
+                }}
+                
+                .data-row:last-child td {{
+                    border-bottom: none;
                 }}
                 
                 .data-row.fail-row {{
-                    background: #fff5f7;
+                    background: var(--danger-light);
                 }}
                 
                 .data-row.fail-row:hover {{
-                    background: #ffe5e9;
+                    background: #fecaca;
                 }}
                 
                 .test-id {{
-                    font-weight: 700;
-                    color: var(--color-purple);
+                    font-weight: 600;
+                    color: var(--primary-color);
                     font-family: 'Courier New', monospace;
+                    font-size: 0.9rem;
                 }}
                 
                 .badge {{
-                    display: inline-block;
-                    padding: 6px 16px;
-                    border-radius: 20px;
-                    font-weight: 700;
-                    font-size: 0.85rem;
+                    display: inline-flex;
+                    align-items: center;
+                    gap: 0.375rem;
+                    padding: 0.375rem 0.75rem;
+                    border-radius: 6px;
+                    font-weight: 600;
+                    font-size: 0.875rem;
                 }}
                 
                 .pass-badge {{
-                    background: var(--gradient-success);
-                    color: white;
+                    background: var(--success-light);
+                    color: #065f46;
                 }}
                 
                 .fail-badge {{
-                    background: var(--gradient-danger);
-                    color: white;
+                    background: var(--danger-light);
+                    color: #991b1b;
                 }}
                 
                 .duration-cell {{
                     font-family: 'Courier New', monospace;
                     font-weight: 600;
-                    color: var(--color-blue);
+                    color: var(--gray-700);
+                    font-size: 0.9rem;
                 }}
                 
                 .no-error {{
-                    color: var(--color-gray);
+                    color: var(--gray-400);
                     font-size: 1.2rem;
                 }}
                 
                 .error-box {{
-                    background: linear-gradient(135deg, #fff5f7 0%, #ffe5e9 100%);
-                    border-left: 4px solid var(--color-pink);
-                    padding: 12px 16px;
-                    border-radius: 8px;
+                    background: white;
+                    border: 1px solid var(--danger-color);
+                    border-left: 3px solid var(--danger-color);
+                    padding: 0.75rem 1rem;
+                    border-radius: 6px;
                     font-family: 'Courier New', monospace;
-                    font-size: 0.85rem;
-                    color: var(--color-dark);
+                    font-size: 0.813rem;
+                    color: var(--gray-800);
                     white-space: pre-wrap;
                     word-break: break-word;
+                    line-height: 1.5;
+                }}
+                
+                @media print {{
+                    body {{
+                        background: white;
+                        padding: 0;
+                    }}
+                    
+                    .stat-card,
+                    .chart-card,
+                    .table-container {{
+                        box-shadow: none;
+                        border: 1px solid var(--gray-200);
+                    }}
                 }}
             </style>
         </head>
@@ -672,10 +706,16 @@ class DessertOrderTestCase(unittest.TestCase):
                 <div class="header">
                     <h1>🧁 Test Execution Report</h1>
                     <p class="subtitle">Petite Pâtisserie - Automated Testing Suite</p>
-                    <span class="timestamp">🕐 Generated: {timestamp}</span>
+                    <span class="timestamp">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <polyline points="12 6 12 12 16 14"></polyline>
+                        </svg>
+                        {timestamp}
+                    </span>
                 </div>
                 
-                <!-- Stats Cards Grid -->
+                <!-- Stats Cards -->
                 <div class="stats-grid">
                     <div class="stat-card total">
                         <div class="label">Total Tests</div>
@@ -695,19 +735,13 @@ class DessertOrderTestCase(unittest.TestCase):
                     </div>
                 </div>
                 
-                <!-- Charts Section -->
+                <!-- Charts -->
                 <div class="charts-section">
                     <!-- Donut Chart -->
                     <div class="chart-card">
                         <h3>Success Rate</h3>
                         <div class="donut-chart">
                             <svg width="200" height="200">
-                                <defs>
-                                    <linearGradient id="passGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                                        <stop offset="0%" style="stop-color:#0ba360;stop-opacity:1" />
-                                        <stop offset="100%" style="stop-color:#3cba92;stop-opacity:1" />
-                                    </linearGradient>
-                                </defs>
                                 <circle class="donut-bg" cx="100" cy="100" r="{radius}"></circle>
                                 <circle class="donut-pass" cx="100" cy="100" r="{radius}"></circle>
                             </svg>
@@ -728,9 +762,9 @@ class DessertOrderTestCase(unittest.TestCase):
                         </div>
                     </div>
                     
-                    <!-- Horizontal Bar Charts -->
+                    <!-- Bar Charts -->
                     <div class="chart-card">
-                        <h3>Detailed Breakdown</h3>
+                        <h3>Test Results Breakdown</h3>
                         <div class="bar-item">
                             <div class="bar-header">
                                 <span>Passed Tests</span>
@@ -759,19 +793,21 @@ class DessertOrderTestCase(unittest.TestCase):
                 <!-- Test Results Table -->
                 <div class="results-section">
                     <h2>Test Case Details</h2>
-                    <table class="results-table">
-                        <thead>
-                            <tr>
-                                <th>Test ID</th>
-                                <th>Status</th>
-                                <th>Duration</th>
-                                <th>Error Details</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {table_rows_html}
-                        </tbody>
-                    </table>
+                    <div class="table-container">
+                        <table class="results-table">
+                            <thead>
+                                <tr>
+                                    <th>Test ID</th>
+                                    <th>Status</th>
+                                    <th>Duration</th>
+                                    <th>Error Details</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {table_rows_html}
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
         </body>

@@ -24,12 +24,14 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # Step 2: Set up Python environment
+      # Step 2: Set up Python environment with built-in caching
       # Configure Python 3.x to run the test scripts
-      - name: Set up Python
+      - name: Set up Python with cache
         uses: actions/setup-python@v5
         with:
           python-version: "3.12"
+          cache: 'pip'  # Built-in caching for pip dependencies
+          cache-dependency-path: 'requirements.txt'
 
       # Step 3: Install project dependencies
       # Install all required Python packages from requirements.txt
@@ -38,7 +40,17 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      # Step 4: Set up Chrome browser and ChromeDriver
+      # Step 4: Cache Chrome and ChromeDriver binaries
+      - name: Cache Chrome and ChromeDriver
+        uses: actions/cache@v4
+        id: chrome-cache
+        with:
+          path: |
+            ~\AppData\Local\Google\Chrome
+            C:\Program Files\Google\Chrome
+          key: chrome-stable-${{ runner.os }}
+
+      # Step 5: Set up Chrome browser and ChromeDriver
       # Ensure the browser and WebDriver are available for Selenium tests
       - name: Set up Chrome and ChromeDriver
         uses: browser-actions/setup-chrome@v1
@@ -46,14 +58,22 @@ jobs:
           chrome-version: stable
         id: setup-chrome
 
-      # Step 5: Check if Chrome is installed correctly
+      # Step 6: Check if Chrome is installed correctly
       # Display Chrome version to confirm it's working
       - name: Verify browser setup
         run: |
           echo "Chrome path: ${{ steps.setup-chrome.outputs.chrome-path }}"
           & "C:\Program Files\Google\Chrome\Application\chrome.exe" --version
 
-      # Step 6: Install PHP
+      # Step 7: Cache PHP
+      - name: Cache PHP
+        uses: actions/cache@v4
+        with:
+          path: |
+            C:\tools\php
+          key: php-8.1-${{ runner.os }}
+
+      # Step 8: Install PHP
       # Configure PHP to serve the web application
       - name: Set up PHP
         uses: shivammathur/setup-php@v2
@@ -63,7 +83,7 @@ jobs:
             ini-values: error_reporting=E_ALL
             coverage: none
 
-      # Step 7: Start the web application
+      # Step 9: Start the web application
       # Launch PHP built-in server to serve the application on localhost port 8000
       - name: Start web server
         run: |
@@ -76,7 +96,7 @@ jobs:
         env:
           BASE_URL: http://localhost:8000/index.php
 
-      # Step 8: Execute Selenium test script
+      # Step 10: Execute Selenium test script
       # Run the Python test script which reads test cases from CSV,
       # launches the browser, loads the web application, and collects results
       - name: Run Selenium tests
@@ -87,7 +107,7 @@ jobs:
           BASE_URL: http://localhost:8000/index.php
           PYTHONIOENCODING: utf-8
 
-      # Step 9A: Upload the HTML Test Report
+      # Step 11A: Upload the HTML Test Report
       - name: Upload Test Report
         if: always()
         uses: actions/upload-artifact@v4
@@ -97,7 +117,7 @@ jobs:
           retention-days: 30
           if-no-files-found: warn
           
-      # Step 9B: Save screenshots and error logs as artifacts for debugging and review
+      # Step 11B: Save screenshots and error logs as artifacts for debugging and review
       - name: Upload Screenshots
         if: always()
         uses: actions/upload-artifact@v4

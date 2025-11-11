@@ -4,7 +4,7 @@
 
 [![Selenium Tests (Windows)](https://github.com/SUTS-SWE30009/software-testing-project-extension-tasks-Ryan12450/actions/workflows/test-windows.yml/badge.svg)](https://github.com/SUTS-SWE30009/software-testing-project-extension-tasks-Ryan12450/actions/workflows/test-windows.yml)
 
-## Description of Sample Web Application
+## Description of Web Application
 A web-based dessert ordering system for "Petite Pâtisserie" that allows cashier to select desserts from the menu and add them to the cart. The application displays the selected items with quantities and calculates the total amount to pay, generating a receipt for the cashier.
 
 ### Interface of [index.php](web%20application/index.php)

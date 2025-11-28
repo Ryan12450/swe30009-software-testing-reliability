@@ -4,77 +4,95 @@
 name: Selenium Tests (Windows)
 
 # Configure the workflow to run manually
-# This allows triggering the workflow on-demand from the Actions tab
 on:
   workflow_dispatch:
 
-# Set a global timeout of 30 minutes to prevent stalled jobs from consuming resources
-# This will automatically terminate the job if it exceeds this time limit
+# Set a global timeout of 30 minutes
 jobs:
   test:
-    # Specify the runner environment - using the latest Windows image
     runs-on: windows-latest
-
-    # Set job-level timeout to 30 minutes
     timeout-minutes: 30
 
     steps:
       # Step 1: Check out the repository code
-      # This clones the repository so the workflow can access the files
       - name: Checkout repository
         uses: actions/checkout@v4
 
       # Step 2: Set up Python environment with built-in caching
-      # Configure Python 3.x to run the test scripts
+      # Updated to v6 to match optimized caching standards
       - name: Set up Python with cache
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: "3.12"
-          cache: 'pip'  # Built-in caching for pip dependencies
+          cache: 'pip'
           cache-dependency-path: 'requirements.txt'
 
       # Step 3: Install project dependencies
-      # Install all required Python packages from requirements.txt
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
       # Step 4: Cache Chrome and ChromeDriver binaries
+      # Caches the specific binary directory to prevent re-downloading
       - name: Cache Chrome and ChromeDriver
         uses: actions/cache@v4
         id: chrome-cache
         with:
-          path: |
-            ~\AppData\Local\Google\Chrome
-            C:\Program Files\Google\Chrome
-          key: chrome-stable-${{ runner.os }}
+          path: C:\selenium_bin
+          key: chrome-130.0.6723.58-windows
 
-      # Step 5: Set up Chrome browser and ChromeDriver
-      # Ensure the browser and WebDriver are available for Selenium tests
-      - name: Set up Chrome and ChromeDriver
-        uses: browser-actions/setup-chrome@v1
-        with:
-          chrome-version: stable
-        id: setup-chrome
+      # Step 5: Install Chrome and ChromeDriver
+      # Only runs if the cache (Step 4) was not found
+      - name: Install Chrome for Testing
+        if: steps.chrome-cache.outputs.cache-hit != 'true'
+        shell: powershell
+        run: |
+          $CHROME_VERSION = "130.0.6723.58"
+          $CHROME_URL = "https://storage.googleapis.com/chrome-for-testing-public/$CHROME_VERSION/win64/chrome-win64.zip"
+          $DRIVER_URL = "https://storage.googleapis.com/chrome-for-testing-public/$CHROME_VERSION/win64/chromedriver-win64.zip"
+          $DEST_DIR = "C:\selenium_bin"
 
-      # Step 6: Check if Chrome is installed correctly
-      # Display Chrome version to confirm it's working
+          # Create directory
+          New-Item -ItemType Directory -Force -Path $DEST_DIR
+
+          echo "Downloading Chrome for Testing $CHROME_VERSION..."
+          
+          # Download and Unzip Chrome
+          Invoke-WebRequest -Uri $CHROME_URL -OutFile "$DEST_DIR\chrome.zip"
+          Expand-Archive -Path "$DEST_DIR\chrome.zip" -DestinationPath $DEST_DIR
+          
+          # Download and Unzip ChromeDriver
+          Invoke-WebRequest -Uri $DRIVER_URL -OutFile "$DEST_DIR\driver.zip"
+          Expand-Archive -Path "$DEST_DIR\driver.zip" -DestinationPath $DEST_DIR
+
+          # Cleanup zip files
+          Remove-Item "$DEST_DIR\chrome.zip"
+          Remove-Item "$DEST_DIR\driver.zip"
+
+      # Step 6: Add Chrome binaries to PATH
+      # Ensures Python can find 'chrome.exe' and 'chromedriver.exe'
+      - name: Add binaries to PATH
+        shell: powershell
+        run: |
+          echo "C:\selenium_bin\chrome-win64" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+          echo "C:\selenium_bin\chromedriver-win64" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+
+      # Step 7: Verify Chrome installation
       - name: Verify browser setup
         run: |
-          echo "Chrome path: ${{ steps.setup-chrome.outputs.chrome-path }}"
-          & "C:\Program Files\Google\Chrome\Application\chrome.exe" --version
+          echo "Verifying installation..."
+          chrome --version
+          chromedriver --version
 
-      # Step 7: Cache PHP
+      # Step 8: Cache PHP
       - name: Cache PHP
         uses: actions/cache@v4
         with:
-          path: |
-            C:\tools\php
+          path: C:\tools\php
           key: php-8.1-${{ runner.os }}
 
-      # Step 8: Install PHP
-      # Configure PHP to serve the web application
+      # Step 9: Set up PHP
       - name: Set up PHP
         uses: shivammathur/setup-php@v2
         with:
@@ -83,22 +101,19 @@ jobs:
             ini-values: error_reporting=E_ALL
             coverage: none
 
-      # Step 9: Start the web application
-      # Launch PHP built-in server to serve the application on localhost port 8000
+      # Step 10: Start the web application
       - name: Start web server
+        shell: powershell
         run: |
           cd "web application"
           Start-Process php -ArgumentList "-S", "localhost:8000" -WindowStyle Hidden
           Start-Sleep -Seconds 5
           curl.exe -I http://localhost:8000/index.php
           Start-Sleep -Seconds 2
-        shell: powershell
         env:
           BASE_URL: http://localhost:8000/index.php
 
-      # Step 10: Execute Selenium test script
-      # Run the Python test script which reads test cases from CSV,
-      # launches the browser, loads the web application, and collects results
+      # Step 11: Execute Selenium test script
       - name: Run Selenium tests
         run: |
           cd tests
@@ -107,7 +122,7 @@ jobs:
           BASE_URL: http://localhost:8000/index.php
           PYTHONIOENCODING: utf-8
 
-      # Step 11A: Upload the HTML Test Report
+      # Step 12: Upload Artifacts
       - name: Upload Test Report
         if: always()
         uses: actions/upload-artifact@v4
@@ -117,7 +132,6 @@ jobs:
           retention-days: 30
           if-no-files-found: warn
           
-      # Step 11B: Save screenshots and error logs as artifacts for debugging and review
       - name: Upload Screenshots
         if: always()
         uses: actions/upload-artifact@v4

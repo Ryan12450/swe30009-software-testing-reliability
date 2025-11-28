@@ -48,6 +48,9 @@ jobs:
         if: steps.chrome-cache.outputs.cache-hit != 'true'
         shell: powershell
         run: |
+          # IMPORTANT: Disable progress bar to prevent hanging
+          $ProgressPreference = 'SilentlyContinue'
+
           $CHROME_VERSION = "130.0.6723.58"
           $CHROME_URL = "https://storage.googleapis.com/chrome-for-testing-public/$CHROME_VERSION/win64/chrome-win64.zip"
           $DRIVER_URL = "https://storage.googleapis.com/chrome-for-testing-public/$CHROME_VERSION/win64/chromedriver-win64.zip"

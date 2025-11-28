@@ -16,6 +16,7 @@ from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import NoSuchElementException, TimeoutException
+from webdriver_manager.chrome import ChromeDriverManager  # NEW
 
 # Global Settings for GitHub Actions
 BASE_URL = os.getenv("BASE_URL", "http://localhost:8000/index.php")
@@ -64,22 +65,26 @@ class DessertOrderTestCase(unittest.TestCase):
         options = Options()
         
         # Chrome arguments
-        options.add_argument('--headless')
-        options.add_argument('--no-sandbox')
-        options.add_argument('--disable-dev-shm-usage')
-        options.add_argument('--disable-extensions')
-        options.add_argument('--disable-popup-blocking')
-        options.add_argument('--disable-notifications')
-        options.add_argument('--disable-infobars')
-        options.add_argument('--disable-blink-features=AutomationControlled')
-        options.add_argument('--no-first-run')
-        options.add_argument('--log-level=3')
-        options.add_argument('--disable-logging')
-        options.add_argument('--disable-gpu')
-        options.add_argument('--window-size=1920,1080')
+        # Use the new headless mode if available (works with Chrome ≥ 109)
+        options.add_argument("--headless=new")
+        options.add_argument("--no-sandbox")
+        options.add_argument("--disable-dev-shm-usage")
+        options.add_argument("--disable-extensions")
+        options.add_argument("--disable-popup-blocking")
+        options.add_argument("--disable-notifications")
+        options.add_argument("--disable-infobars")
+        options.add_argument("--disable-blink-features=AutomationControlled")
+        options.add_argument("--no-first-run")
+        options.add_argument("--log-level=3")
+        options.add_argument("--disable-logging")
+        options.add_argument("--disable-gpu")
+        options.add_argument("--window-size=1920,1080")
         options.add_experimental_option('excludeSwitches', ['enable-logging'])
-        
-        cls.driver = webdriver.Chrome(options=options)
+
+        # Use WebDriver Manager to automatically download a compatible ChromeDriver
+        print("Using webdriver-manager to install a compatible ChromeDriver...")
+        service = Service(ChromeDriverManager().install())
+        cls.driver = webdriver.Chrome(service=service, options=options)
         
         # Create screenshot directory relative to this script's location
         # (Script runs from 'tests/' dir in workflow)

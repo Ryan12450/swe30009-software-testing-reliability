@@ -24,8 +24,8 @@ jobs:
         uses: actions/setup-python@v6
         with:
           python-version: "3.12"
-          cache: 'pip'
-          cache-dependency-path: 'requirements.txt'
+          cache: "pip"
+          cache-dependency-path: "requirements.txt"
 
       # Step 3: Install project dependencies
       - name: Install dependencies
@@ -33,60 +33,10 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      # Step 4: Cache Chrome and ChromeDriver binaries
-      # Caches the specific binary directory to prevent re-downloading
-      - name: Cache Chrome and ChromeDriver
-        uses: actions/cache@v4
-        id: chrome-cache
-        with:
-          path: C:\selenium_bin
-          key: chrome-130.0.6723.58-windows
-
-      # Step 5: Install Chrome and ChromeDriver
-      # Only runs if the cache (Step 4) was not found
-      - name: Install Chrome for Testing
-        if: steps.chrome-cache.outputs.cache-hit != 'true'
-        shell: powershell
-        run: |
-          # IMPORTANT: Disable progress bar to prevent hanging
-          $ProgressPreference = 'SilentlyContinue'
-
-          $CHROME_VERSION = "130.0.6723.58"
-          $CHROME_URL = "https://storage.googleapis.com/chrome-for-testing-public/$CHROME_VERSION/win64/chrome-win64.zip"
-          $DRIVER_URL = "https://storage.googleapis.com/chrome-for-testing-public/$CHROME_VERSION/win64/chromedriver-win64.zip"
-          $DEST_DIR = "C:\selenium_bin"
-
-          # Create directory
-          New-Item -ItemType Directory -Force -Path $DEST_DIR
-
-          echo "Downloading Chrome for Testing $CHROME_VERSION..."
-          
-          # Download and Unzip Chrome
-          Invoke-WebRequest -Uri $CHROME_URL -OutFile "$DEST_DIR\chrome.zip"
-          Expand-Archive -Path "$DEST_DIR\chrome.zip" -DestinationPath $DEST_DIR
-          
-          # Download and Unzip ChromeDriver
-          Invoke-WebRequest -Uri $DRIVER_URL -OutFile "$DEST_DIR\driver.zip"
-          Expand-Archive -Path "$DEST_DIR\driver.zip" -DestinationPath $DEST_DIR
-
-          # Cleanup zip files
-          Remove-Item "$DEST_DIR\chrome.zip"
-          Remove-Item "$DEST_DIR\driver.zip"
-
-      # Step 6: Add Chrome binaries to PATH
-      # Ensures Python can find 'chrome.exe' and 'chromedriver.exe'
-      - name: Add binaries to PATH
-        shell: powershell
-        run: |
-          echo "C:\selenium_bin\chrome-win64" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
-          echo "C:\selenium_bin\chromedriver-win64" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
-
-      # Step 7: Verify Chrome installation
-      - name: Verify browser setup
-        run: |
-          echo "Verifying installation..."
-          chrome --version
-          chromedriver --version
+      # NOTE:
+      # We no longer download or pin Chrome/ChromeDriver here.
+      # The hosted runner already has Chrome installed, and the tests
+      # now use webdriver-manager to install a matching ChromeDriver.
 
       # Step 8: Cache PHP
       - name: Cache PHP
@@ -99,10 +49,10 @@ jobs:
       - name: Set up PHP
         uses: shivammathur/setup-php@v2
         with:
-            php-version: "8.1"
-            extensions: none
-            ini-values: error_reporting=E_ALL
-            coverage: none
+          php-version: "8.1"
+          extensions: none
+          ini-values: error_reporting=E_ALL
+          coverage: none
 
       # Step 10: Start the web application
       - name: Start web server

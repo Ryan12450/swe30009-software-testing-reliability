@@ -4,87 +4,83 @@
 name: Selenium Tests (Ubuntu)
 
 # Configure the workflow to run manually
-# This allows triggering the workflow on-demand from the Actions tab
 on:
   workflow_dispatch:
 
-# Set a global timeout of 30 minutes to prevent stalled jobs from consuming resources
-# This will automatically terminate the job if it exceeds this time limit
+# Set a global timeout of 30 minutes
 jobs:
   test:
-    # Specify the runner environment - using the latest Ubuntu image
     runs-on: ubuntu-latest
-
-    # Set job-level timeout to 30 minutes
     timeout-minutes: 30
 
     steps:
       # Step 1: Check out the repository code
-      # This clones the repository so the workflow can access the files
       - name: Checkout repository
         uses: actions/checkout@v4
 
       # Step 2: Set up Python environment with built-in caching
-      # Configure Python 3.x to run the test scripts
+      # Updated to v6 to match optimized caching standards
       - name: Set up Python with cache
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: "3.12"
-          cache: 'pip'  # Built-in caching for pip dependencies
+          cache: 'pip'
           cache-dependency-path: 'requirements.txt'
 
       # Step 3: Install project dependencies
-      # Install all required Python packages from requirements.txt
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
       # Step 4: Cache Chrome and ChromeDriver binaries
+      # Caches the specific binary paths to prevent re-downloading on every run
       - name: Cache Chrome and ChromeDriver
         uses: actions/cache@v4
         id: chrome-cache
         with:
           path: |
-            ~/.cache/selenium
             /opt/chrome
             /usr/local/bin/chromedriver
-          key: chrome-stable-${{ runner.os }}
+          key: chrome-130.0.6723.58
 
-      # Step 5: Set up Chrome browser and ChromeDriver
-      # Ensure the browser and WebDriver are available for Selenium tests
-      - name: Set up Chrome and ChromeDriver
-        uses: browser-actions/setup-chrome@v1
-        with:
-          chrome-version: stable
-        id: setup-chrome
+      # Step 5: Install Chrome and ChromeDriver
+      # Only runs if the cache (Step 4) was not found
+      - name: Install Chrome for Testing
+        if: steps.chrome-cache.outputs.cache-hit != 'true'
+        run: |
+          CHROME_VERSION="130.0.6723.58"
+          echo "Downloading Chrome for Testing $CHROME_VERSION..."
+          
+          wget -q "https://storage.googleapis.com/chrome-for-testing-public/${CHROME_VERSION}/linux64/chrome-linux64.zip"
+          unzip -q chrome-linux64.zip
+          sudo mkdir -p /opt/chrome
+          sudo mv chrome-linux64/* /opt/chrome/
+          sudo ln -sf /opt/chrome/chrome /usr/bin/google-chrome
+          
+          wget -q "https://storage.googleapis.com/chrome-for-testing-public/${CHROME_VERSION}/linux64/chromedriver-linux64.zip"
+          unzip -q chromedriver-linux64.zip
+          sudo mv chromedriver-linux64/chromedriver /usr/local/bin/
+          sudo chmod +x /usr/local/bin/chromedriver
+          
+          rm chrome-linux64.zip chromedriver-linux64.zip
 
-      # Step 6: Check if Chrome is installed correctly
-      # Display Chrome version to confirm it's working
+      # Step 6: Verify Chrome installation
       - name: Verify browser setup
         run: |
-          echo "Chrome path: ${{ steps.setup-chrome.outputs.chrome-path }}"
+          echo "Verifying installation..."
           google-chrome --version
-          which google-chrome
+          chromedriver --version
 
-      # Step 7: Cache PHP packages
-      - name: Cache PHP
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.php
-            /usr/bin/php
-          key: php-8.1-${{ runner.os }}
-
-      # Step 8: Install PHP
-      # Configure PHP to serve the web application
+      # Step 7: Set up PHP
+      # Using setup-php is preferred for the built-in server workflow
       - name: Set up PHP
         uses: shivammathur/setup-php@v2
         with:
           php-version: "8.1"
+          coverage: none
 
-      # Step 9: Start the web application
-      # Launch PHP built-in server to serve the application on localhost port 8000
+      # Step 8: Start the web application
       - name: Start web server
         run: |
           cd "web application"
@@ -95,9 +91,7 @@ jobs:
         env:
           BASE_URL: http://localhost:8000/index.php
 
-      # Step 10: Execute Selenium test script
-      # Run the Python test script which reads test cases from CSV,
-      # launches the browser, loads the web application, and collects results
+      # Step 9: Execute Selenium test script
       - name: Run Selenium tests
         run: |
           cd tests
@@ -105,7 +99,7 @@ jobs:
         env:
           BASE_URL: http://localhost:8000/index.php
 
-      # Step 11A: Upload the HTML Test Report
+      # Step 10: Upload artifacts
       - name: Upload Test Report
         if: always()
         uses: actions/upload-artifact@v4
@@ -115,7 +109,6 @@ jobs:
           retention-days: 30
           if-no-files-found: warn
           
-      # Step 11B: Save screenshots and error logs as artifacts for debugging and review
       - name: Upload Screenshots
         if: always()
         uses: actions/upload-artifact@v4

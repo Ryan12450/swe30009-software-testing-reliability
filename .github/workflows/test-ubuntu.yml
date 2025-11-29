@@ -19,13 +19,12 @@ jobs:
         uses: actions/checkout@v4
 
       # Step 2: Set up Python environment with built-in caching
-      # Updated to v6 to match optimized caching standards
       - name: Set up Python with cache
         uses: actions/setup-python@v6
         with:
           python-version: "3.12"
           cache: 'pip'
-          cache-dependency-path: 'requirements.txt'
+          cache-dependency-path: 'requirements. txt'
 
       # Step 3: Install project dependencies
       - name: Install dependencies
@@ -33,8 +32,15 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      # Step 4: Cache Chrome and ChromeDriver binaries
-      # Caches the specific binary paths to prevent re-downloading on every run
+      # Step 4: Get latest stable Chrome version
+      - name: Get latest Chrome version
+        id: chrome-version
+        run: |
+          LATEST_VERSION=$(curl -s https://googlechromelabs.github.io/chrome-for-testing/last-known-good-versions-with-downloads.json | jq -r '. channels. Stable.version')
+          echo "version=$LATEST_VERSION" >> $GITHUB_OUTPUT
+          echo "📦 Latest stable Chrome version: $LATEST_VERSION"
+
+      # Step 5: Cache Chrome and ChromeDriver binaries
       - name: Cache Chrome and ChromeDriver
         uses: actions/cache@v4
         id: chrome-cache
@@ -42,15 +48,15 @@ jobs:
           path: |
             /opt/chrome
             /usr/local/bin/chromedriver
-          key: chrome-130.0.6723.58
+          key: chrome-${{ steps.chrome-version.outputs.version }}
 
-      # Step 5: Install Chrome and ChromeDriver
-      # Only runs if the cache (Step 4) was not found
+      # Step 6: Install Chrome and ChromeDriver
+      # Only runs if the cache was not found
       - name: Install Chrome for Testing
         if: steps.chrome-cache.outputs.cache-hit != 'true'
         run: |
-          CHROME_VERSION="130.0.6723.58"
-          echo "Downloading Chrome for Testing $CHROME_VERSION..."
+          CHROME_VERSION="${{ steps.chrome-version.outputs.version }}"
+          echo "⬇️ Downloading Chrome for Testing $CHROME_VERSION..."
           
           wget -q "https://storage.googleapis.com/chrome-for-testing-public/${CHROME_VERSION}/linux64/chrome-linux64.zip"
           unzip -q chrome-linux64.zip
@@ -64,23 +70,23 @@ jobs:
           sudo chmod +x /usr/local/bin/chromedriver
           
           rm chrome-linux64.zip chromedriver-linux64.zip
+          echo "✅ Chrome $CHROME_VERSION installed successfully"
 
-      # Step 6: Verify Chrome installation
+      # Step 7: Verify Chrome installation
       - name: Verify browser setup
         run: |
-          echo "Verifying installation..."
+          echo "🔍 Verifying installation..."
           google-chrome --version
           chromedriver --version
 
-      # Step 7: Set up PHP
-      # Using setup-php is preferred for the built-in server workflow
+      # Step 8: Set up PHP
       - name: Set up PHP
         uses: shivammathur/setup-php@v2
         with:
           php-version: "8.1"
           coverage: none
 
-      # Step 8: Start the web application
+      # Step 9: Start the web application
       - name: Start web server
         run: |
           cd "web application"
@@ -91,7 +97,7 @@ jobs:
         env:
           BASE_URL: http://localhost:8000/index.php
 
-      # Step 9: Execute Selenium test script
+      # Step 10: Execute Selenium test script
       - name: Run Selenium tests
         run: |
           cd tests
@@ -99,13 +105,13 @@ jobs:
         env:
           BASE_URL: http://localhost:8000/index.php
 
-      # Step 10: Upload artifacts
+      # Step 11: Upload artifacts
       - name: Upload Test Report
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: test-report-ubuntu
-          path: tests/test_report.html
+          path: tests/test_report. html
           retention-days: 30
           if-no-files-found: warn
           

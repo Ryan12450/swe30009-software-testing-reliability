@@ -37,7 +37,7 @@ jobs:
         id: chrome-version
         shell: powershell
         run: |
-          $response = Invoke-RestMethod -Uri "https://googlechromelabs.github. io/chrome-for-testing/last-known-good-versions-with-downloads.json"
+          $response = Invoke-RestMethod -Uri "https://googlechromelabs.github.io/chrome-for-testing/last-known-good-versions-with-downloads.json"
           $version = $response.channels. Stable.version
           echo "version=$version" >> $env:GITHUB_OUTPUT
           Write-Host "Latest stable Chrome version: $version"

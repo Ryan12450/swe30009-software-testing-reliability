@@ -36,7 +36,7 @@ jobs:
       - name: Get latest Chrome version
         id: chrome-version
         run: |
-          LATEST_VERSION=$(curl -s https://googlechromelabs.github.io/chrome-for-testing/last-known-good-versions-with-downloads.json | jq -r '.channels. Stable.version')
+          LATEST_VERSION=$(curl -s https://googlechromelabs.github.io/chrome-for-testing/last-known-good-versions-with-downloads.json | jq -r '.channels.Stable.version')
           echo "version=$LATEST_VERSION" >> $GITHUB_OUTPUT
           echo "📦 Latest stable Chrome version: $LATEST_VERSION"
 

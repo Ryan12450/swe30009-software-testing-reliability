@@ -51,31 +51,26 @@ jobs:
           key: chrome-${{ steps.chrome-version.outputs.version }}-windows
 
       # Step 6: Install Chrome and ChromeDriver
+      # Only runs if the cache was not found
       - name: Install Chrome for Testing
-        if: steps.chrome-cache. outputs.cache-hit != 'true'
-        shell: powershell
+        if: steps.chrome-cache.outputs.cache-hit != 'true'
         run: |
-          $CHROME_VERSION = "${{ steps.chrome-version.outputs.version }}"
-          Write-Host "⬇️ Downloading Chrome for Testing $CHROME_VERSION..."
+          CHROME_VERSION="${{ steps.chrome-version.outputs.version }}"
+          echo "⬇️ Downloading Chrome for Testing $CHROME_VERSION..."
           
-          # Download and extract Chrome
-          Invoke-WebRequest -Uri "https://storage.googleapis.com/chrome-for-testing-public/$CHROME_VERSION/win64/chrome-win64.zip" -OutFile "chrome-win64.zip"
-          Expand-Archive -Path "chrome-win64.zip" -DestinationPath "C:\"
-          Rename-Item -Path "C:\chrome-win64" -NewName "chrome"
+          wget -q "https://storage.googleapis.com/chrome-for-testing-public/${CHROME_VERSION}/linux64/chrome-linux64.zip"
+          unzip -q chrome-linux64.zip
+          sudo mkdir -p /opt/chrome
+          sudo mv chrome-linux64/* /opt/chrome/
+          sudo ln -sf /opt/chrome/chrome /usr/bin/google-chrome
           
-          # Download and extract ChromeDriver
-          Invoke-WebRequest -Uri "https://storage.googleapis.com/chrome-for-testing-public/$CHROME_VERSION/win64/chromedriver-win64.zip" -OutFile "chromedriver-win64.zip"
-          Expand-Archive -Path "chromedriver-win64.zip" -DestinationPath "C:\"
-          Rename-Item -Path "C:\chromedriver-win64" -NewName "chromedriver"
+          wget -q "https://storage.googleapis.com/chrome-for-testing-public/${CHROME_VERSION}/linux64/chromedriver-linux64.zip"
+          unzip -q chromedriver-linux64.zip
+          sudo mv chromedriver-linux64/chromedriver /usr/local/bin/
+          sudo chmod +x /usr/local/bin/chromedriver
           
-          # Add to PATH
-          echo "C:\chrome" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
-          echo "C:\chromedriver" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
-          
-          # Cleanup
-          Remove-Item "chrome-win64.zip"
-          Remove-Item "chromedriver-win64.zip"
-          Write-Host "✅ Chrome $CHROME_VERSION installed successfully"
+          rm chrome-linux64.zip chromedriver-linux64.zip
+          echo "✅ Chrome $CHROME_VERSION installed successfully"
 
       # Step 7: Verify Chrome installation
       - name: Verify browser setup

@@ -10,13 +10,13 @@ from datetime import datetime
 from decimal import Decimal, ROUND_HALF_UP
 from selenium import webdriver
 from selenium.webdriver.common.by import By
-from selenium.webdriver.common.keys import Keys
+from selenium.webdriver. common.keys import Keys
 from selenium.webdriver.chrome.options import Options
-from selenium.webdriver.chrome.service import Service
-from selenium.webdriver.support.ui import WebDriverWait
+from selenium. webdriver.chrome.service import Service
+from selenium. webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import NoSuchElementException, TimeoutException
-from webdriver_manager.chrome import ChromeDriverManager  # NEW
+# ChromeDriverManager imported conditionally in setUpClass (only for local dev)
 
 # Global Settings for GitHub Actions
 BASE_URL = os.getenv("BASE_URL", "http://localhost:8000/index.php")
@@ -27,7 +27,7 @@ REPORT_FILE = "test_report.html"
 # Helper function for safe decimal comparison
 def d(value):
     """Convert to Decimal with 2 decimal places for reliable comparison."""
-    return Decimal(str(value)).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+    return Decimal(str(value)). quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
 
 # Maps CSV column names to their corresponding HTML input IDs
 ITEM_MAPPING = {
@@ -47,7 +47,7 @@ def log_error_to_file(test_id, error):
         os.makedirs(os.path.dirname(ERROR_LOG_FILE) if os.path.dirname(ERROR_LOG_FILE) else ".", exist_ok=True)
         with open(ERROR_LOG_FILE, 'a', encoding='utf-8') as f:
             timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-            f.write(f"\n{'='*70}\n")
+            f. write(f"\n{'='*70}\n")
             f.write(f"[{timestamp}] Test Case: {test_id}\n")
             f.write(f"{'-'*70}\n")
             f.write(f"{error}\n")
@@ -81,21 +81,46 @@ class DessertOrderTestCase(unittest.TestCase):
         options.add_argument("--window-size=1920,1080")
         options.add_experimental_option('excludeSwitches', ['enable-logging'])
 
-        # Use WebDriver Manager to automatically download a compatible ChromeDriver
-        print("Using webdriver-manager to install a compatible ChromeDriver...")
-        service = Service(ChromeDriverManager().install())
-        cls.driver = webdriver.Chrome(service=service, options=options)
+        # --- HYBRID CHROMEDRIVER STRATEGY ---
+        # Strategy A: Use manually installed drivers on CI (fast, version-pinned)
+        # Strategy B: Use webdriver-manager on local development (convenience)
+        
+        ubuntu_driver_path = "/usr/local/bin/chromedriver"
+        windows_driver_path = r"C:\chromedriver\chromedriver.exe"
+        
+        if os.path.exists(ubuntu_driver_path):
+            # Ubuntu CI: Use cached, version-pinned driver
+            print(f"🐧 Ubuntu CI detected. Using system driver: {ubuntu_driver_path}")
+            service = Service(executable_path=ubuntu_driver_path)
+            cls.driver = webdriver.Chrome(service=service, options=options)
+            
+        elif os.path.exists(windows_driver_path):
+            # Windows CI: Use cached, version-pinned driver  
+            print(f"🪟 Windows CI detected. Using system driver: {windows_driver_path}")
+            service = Service(executable_path=windows_driver_path)
+            cls.driver = webdriver.Chrome(service=service, options=options)
+            
+        else:
+            # Local development: Use WebDriver Manager for convenience
+            print("💻 Local environment detected. Using webdriver-manager for automatic setup...")
+            try:
+                from webdriver_manager.chrome import ChromeDriverManager
+                service = Service(ChromeDriverManager().install())
+                cls. driver = webdriver.Chrome(service=service, options=options)
+            except ImportError:
+                print("⚠️ webdriver-manager not found. Install it with: pip install webdriver-manager")
+                raise
         
         # Create screenshot directory relative to this script's location
         # (Script runs from 'tests/' dir in workflow)
         os.makedirs(SCREENSHOT_DIR, exist_ok=True)
         
         # Load test cases from CSV
-        cls.test_cases = []
+        cls. test_cases = []
         try:
             with open('dessert_test_cases.csv', mode='r', encoding='utf-8-sig') as file:
                 csv_reader = csv.DictReader(file)
-                cls.test_cases = list(csv_reader)
+                cls. test_cases = list(csv_reader)
             print(f"✅ Loaded {len(cls.test_cases)} test cases from CSV")
         except FileNotFoundError:
             print("ERROR: 'dessert_test_cases.csv' not found. Please make sure it's in the same folder.")
@@ -124,7 +149,7 @@ class DessertOrderTestCase(unittest.TestCase):
         print(f"\n--- Running Test Case: {test_id} ({description}) ---")
         
         self.driver.get(BASE_URL)
-        wait = WebDriverWait(self.driver, 10)
+        wait = WebDriverWait(self. driver, 10)
         wait.until(EC.presence_of_element_located((By.ID, 'calculateBtn')))
 
         # Fill in quantities
@@ -136,19 +161,19 @@ class DessertOrderTestCase(unittest.TestCase):
                 self.driver.execute_script("arguments[0].value = arguments[1];", qty_input, quantity)
         
         total_items = 0
-        for csv_key in ITEM_MAPPING.keys():
+        for csv_key in ITEM_MAPPING. keys():
             total_items += int(row[csv_key])
         print(f"🛒 Total items in order: {total_items}")
         
         # Handle the discount toggle
         discount_needed = row['Discount_Enabled']
         discount_checkbox = wait.until(EC.presence_of_element_located((By.ID, 'discountToggle')))
-        discount_slider = wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, '.discount-toggle .slider')))
+        discount_slider = wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, '. discount-toggle . slider')))
         is_checked = discount_checkbox.is_selected()
 
         if discount_needed == 'Yes' and not is_checked:
             self.driver.execute_script("arguments[0].scrollIntoView({behavior: 'smooth', block: 'center'});", discount_slider)
-            wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, '.discount-toggle .slider')))
+            wait.until(EC.element_to_be_clickable((By. CSS_SELECTOR, '.discount-toggle .slider')))
             self.driver.execute_script("arguments[0].click();", discount_slider)
             wait.until(lambda driver: discount_checkbox.is_selected())
             self.assertTrue(discount_checkbox.is_selected(), "Discount toggle failed to enable")
@@ -171,7 +196,7 @@ class DessertOrderTestCase(unittest.TestCase):
         self.driver.execute_script("arguments[0].scrollIntoView({behavior: 'smooth', block: 'center'});", calculate_button)
         self.driver.execute_script("arguments[0].click();", calculate_button)
         
-        wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, ".receipt-row.subtotal .receipt-value")))
+        wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, ". receipt-row. subtotal . receipt-value")))
         
         # Extract actual values
         subtotal_spans = self.driver.find_elements(By.CSS_SELECTOR, ".receipt-row.subtotal .receipt-value")
@@ -180,11 +205,11 @@ class DessertOrderTestCase(unittest.TestCase):
         if discount_needed == 'Yes' and len(subtotal_spans) > 1:
             subtotal_text = subtotal_spans[-1].text
         else:
-            subtotal_text = subtotal_spans[0].text
+            subtotal_text = subtotal_spans[0]. text
 
         actual_subtotal = subtotal_text.replace('RM', '').strip()
         actual_sst = self.driver.find_element(By.CSS_SELECTOR, ".receipt-row.sst .receipt-value").text.replace('RM', '').strip()
-        actual_grand_total = self.driver.find_element(By.CSS_SELECTOR, ".receipt-row.grand-total .receipt-value").text.replace('RM', '').strip()
+        actual_grand_total = self.driver.find_element(By.CSS_SELECTOR, ".receipt-row.grand-total .receipt-value").text.replace('RM', ''). strip()
 
         # Get expected values
         expected_subtotal = row['Expected_Subtotal']
@@ -253,7 +278,7 @@ class DessertOrderTestCase(unittest.TestCase):
                 <tr class='data-row {row_highlight}'>
                     <td class='test-id'>{html.escape(r['id'])}</td>
                     <td><span class='badge {status_badge}'>{icon} {r['status']}</span></td>
-                    <td class='duration-cell'>{r['duration']:.2f}s</td>
+                    <td class='duration-cell'>{r['duration']:. 2f}s</td>
                     <td class='details-cell'>{error_display}</td>
                 </tr>
             """
@@ -264,11 +289,11 @@ class DessertOrderTestCase(unittest.TestCase):
         <html lang="en">
         <head>
             <meta charset="UTF-8">
-            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <meta name="viewport" content="width=device-width, initial-scale=1. 0">
             <title>Test Report - Petite Pâtisserie</title>
             <link rel="preconnect" href="https://fonts.googleapis.com">
             <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-            <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+            <link href="https://fonts. googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
             <style>
                 * {{
                     margin: 0;
@@ -316,7 +341,7 @@ class DessertOrderTestCase(unittest.TestCase):
                 /* Header Section */
                 .header {{
                     background: white;
-                    padding: 2.5rem 2rem;
+                    padding: 2. 5rem 2rem;
                     border-radius: 12px;
                     margin-bottom: 2rem;
                     box-shadow: var(--shadow);
@@ -330,14 +355,14 @@ class DessertOrderTestCase(unittest.TestCase):
                     margin-bottom: 0.5rem;
                 }}
                 
-                .header .subtitle {{
+                .header . subtitle {{
                     font-size: 1rem;
                     color: var(--gray-600);
                     font-weight: 500;
                     margin-bottom: 1rem;
                 }}
                 
-                .timestamp {{
+                . timestamp {{
                     display: inline-flex;
                     align-items: center;
                     gap: 0.5rem;
@@ -353,7 +378,7 @@ class DessertOrderTestCase(unittest.TestCase):
                 .stats-grid {{
                     display: grid;
                     grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-                    gap: 1.5rem;
+                    gap: 1. 5rem;
                     margin-bottom: 2rem;
                 }}
                 
@@ -371,7 +396,7 @@ class DessertOrderTestCase(unittest.TestCase):
                     box-shadow: var(--shadow-lg);
                 }}
                 
-                .stat-card.total {{
+                .stat-card. total {{
                     border-color: var(--primary-color);
                 }}
                 
@@ -406,7 +431,7 @@ class DessertOrderTestCase(unittest.TestCase):
                 /* Charts Section */
                 .charts-section {{
                     display: grid;
-                    grid-template-columns: 1fr 1.5fr;
+                    grid-template-columns: 1fr 1. 5fr;
                     gap: 1.5rem;
                     margin-bottom: 2rem;
                 }}
@@ -428,11 +453,11 @@ class DessertOrderTestCase(unittest.TestCase):
                     font-size: 1.25rem;
                     font-weight: 700;
                     color: var(--gray-900);
-                    margin-bottom: 1.5rem;
+                    margin-bottom: 1. 5rem;
                 }}
                 
                 /* Donut Chart */
-                .donut-chart {{
+                . donut-chart {{
                     position: relative;
                     width: 200px;
                     height: 200px;
@@ -468,8 +493,8 @@ class DessertOrderTestCase(unittest.TestCase):
                     text-align: center;
                 }}
                 
-                .donut-center .percentage {{
-                    font-size: 2.5rem;
+                .donut-center . percentage {{
+                    font-size: 2. 5rem;
                     font-weight: 800;
                     color: var(--gray-900);
                 }}
@@ -548,7 +573,7 @@ class DessertOrderTestCase(unittest.TestCase):
                     font-weight: 600;
                 }}
                 
-                .bar-track.empty .bar-fill {{
+                .bar-track.empty . bar-fill {{
                     display: none;
                 }}
                 
@@ -569,7 +594,7 @@ class DessertOrderTestCase(unittest.TestCase):
                     background: var(--success-color);
                 }}
                 
-                .bar-fill.fail {{
+                .bar-fill. fail {{
                     background: var(--danger-color);
                 }}
                 
@@ -582,7 +607,7 @@ class DessertOrderTestCase(unittest.TestCase):
                     font-size: 1.5rem;
                     font-weight: 700;
                     color: var(--gray-900);
-                    margin-bottom: 1.5rem;
+                    margin-bottom: 1. 5rem;
                 }}
                 
                 .table-container {{
@@ -629,7 +654,7 @@ class DessertOrderTestCase(unittest.TestCase):
                     border-bottom: none;
                 }}
                 
-                .data-row.fail-row {{
+                . data-row.fail-row {{
                     background: var(--danger-light);
                 }}
                 
@@ -673,10 +698,10 @@ class DessertOrderTestCase(unittest.TestCase):
                 
                 .no-error {{
                     color: var(--gray-400);
-                    font-size: 1.2rem;
+                    font-size: 1. 2rem;
                 }}
                 
-                .error-box {{
+                . error-box {{
                     background: white;
                     border: 1px solid var(--danger-color);
                     border-left: 3px solid var(--danger-color);
@@ -696,7 +721,7 @@ class DessertOrderTestCase(unittest.TestCase):
                         padding: 0;
                     }}
                     
-                    .stat-card,
+                    . stat-card,
                     .chart-card,
                     .table-container {{
                         box-shadow: none;
@@ -736,7 +761,7 @@ class DessertOrderTestCase(unittest.TestCase):
                     </div>
                     <div class="stat-card time">
                         <div class="label">Duration</div>
-                        <div class="value">{total_duration:.1f}s</div>
+                        <div class="value">{total_duration:. 1f}s</div>
                     </div>
                 </div>
                 
@@ -864,7 +889,7 @@ class DessertOrderTestCase(unittest.TestCase):
                 print(f"📸 Screenshot saved to {screenshot_file}")
                 print(f"📝 Full error log saved to {ERROR_LOG_FILE}")
                 
-                error_summary = str(e).splitlines()[0] if str(e).splitlines() else str(e)
+                error_summary = str(e). splitlines()[0] if str(e).splitlines() else str(e)
                 test_results_summary.append({
                     'id': test_id,
                     'status': 'FAIL',
@@ -889,7 +914,7 @@ class DessertOrderTestCase(unittest.TestCase):
             details = result['details']
             duration = result['duration']
             status_icon = "✅" if status == "PASS" else "❌"
-            print(f"{test_id:<10} | {status_icon} {status:<8} | {duration:<15.2f} | {details:<30}")
+            print(f"{test_id:<10} | {status_icon} {status:<8} | {duration:<15. 2f} | {details:<30}")
             if status == "FAIL":
                 failed_count += 1
         
@@ -912,11 +937,11 @@ if __name__ == "__main__":
     print("=" * 60)
     
     suite = unittest.TestLoader().loadTestsFromTestCase(DessertOrderTestCase)
-    runner = unittest.TextTestRunner(verbosity=2)
+    runner = unittest. TextTestRunner(verbosity=2)
     result = runner.run(suite)
     
     if result.wasSuccessful():
-        print("\n🎉 Result: All test cases passed! 🎉")
+        print("\n🎉 Result: All test cases passed!  🎉")
         sys.exit(0)
     else:
         print(f"\n❌ Result: {len(result.failures) + len(result.errors)} test(s) failed.")

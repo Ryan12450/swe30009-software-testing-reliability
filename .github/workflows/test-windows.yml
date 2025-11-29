@@ -91,7 +91,7 @@ jobs:
         shell: powershell
         run: |
           Write-Host "Verifying installation..."
-          & "C:\chrome\chrome. exe" --version
+          & "C:\chrome\chrome.exe" --version
           & "C:\chromedriver\chromedriver.exe" --version
 
       # Step 8: Cache PHP

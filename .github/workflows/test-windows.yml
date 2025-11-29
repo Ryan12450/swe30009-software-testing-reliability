@@ -38,7 +38,7 @@ jobs:
         shell: powershell
         run: |
           $response = Invoke-RestMethod -Uri "https://googlechromelabs.github.io/chrome-for-testing/last-known-good-versions-with-downloads.json"
-          $version = $response.channels. Stable.version
+          $version = $response.channels.Stable.version
           echo "version=$version" >> $env:GITHUB_OUTPUT
           Write-Host "📦 Latest stable Chrome version: $version"
 
@@ -84,7 +84,7 @@ jobs:
         shell: powershell
         run: |
           Write-Host "🔍 Verifying installation..."
-          & "C:\chrome\chrome.exe" --version
+          & "C:\chrome\chrome. exe" --version
           & "C:\chromedriver\chromedriver.exe" --version
 
       # Step 8: Cache PHP

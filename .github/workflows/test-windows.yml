@@ -33,11 +33,6 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      # NOTE:
-      # We no longer download or pin Chrome/ChromeDriver here.
-      # The hosted runner already has Chrome installed, and the tests
-      # now use webdriver-manager to install a matching ChromeDriver.
-
       # Step 8: Cache PHP
       - name: Cache PHP
         uses: actions/cache@v4

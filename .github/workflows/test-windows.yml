@@ -38,7 +38,7 @@ jobs:
         shell: powershell
         run: |
           $response = Invoke-RestMethod -Uri "https://googlechromelabs.github.io/chrome-for-testing/last-known-good-versions-with-downloads.json"
-          $version = $response.channels. Stable. version
+          $version = $response.channels.Stable.version
           echo "version=$version" >> $env:GITHUB_OUTPUT
           Write-Host "Latest stable Chrome version: $version"
 
@@ -50,35 +50,42 @@ jobs:
           path: |
             C:\chrome
             C:\chromedriver
-          key: chrome-${{ steps. chrome-version.outputs.version }}-windows
+          key: chrome-${{ steps.chrome-version.outputs.version }}-windows
 
       # Step 6: Install Chrome and ChromeDriver
       # Only runs if the cache was not found
       - name: Install Chrome for Testing
-        if: steps.chrome-cache. outputs.cache-hit != 'true'
+        if: steps.chrome-cache.outputs.cache-hit != 'true'
         shell: powershell
         run: |
-          $CHROME_VERSION = "${{ steps.chrome-version.outputs. version }}"
-          Write-Host "Downloading Chrome for Testing $CHROME_VERSION..."
+          $CHROME_VERSION = "${{ steps.chrome-version.outputs.version }}"
+          Write-Host "Downloading Chrome for Testing $CHROME_VERSION (this may take 3-5 minutes)..."
           
-          # Download and extract Chrome
+          # Disable progress bar for faster downloads
+          $ProgressPreference = 'SilentlyContinue'
+          
+          # Download Chrome
+          Write-Host "[1/4] Downloading Chrome browser..."
           Invoke-WebRequest -Uri "https://storage.googleapis.com/chrome-for-testing-public/$CHROME_VERSION/win64/chrome-win64.zip" -OutFile "chrome-win64.zip"
-          Expand-Archive -Path "chrome-win64.zip" -DestinationPath "C:\"
-          Rename-Item -Path "C:\chrome-win64" -NewName "chrome"
+          Write-Host "[2/4] Extracting Chrome..."
+          Expand-Archive -Path "chrome-win64.zip" -DestinationPath "C:\" -Force
+          Rename-Item -Path "C:\chrome-win64" -NewName "chrome" -Force
           
-          # Download and extract ChromeDriver
-          Invoke-WebRequest -Uri "https://storage. googleapis.com/chrome-for-testing-public/$CHROME_VERSION/win64/chromedriver-win64.zip" -OutFile "chromedriver-win64. zip"
-          Expand-Archive -Path "chromedriver-win64.zip" -DestinationPath "C:\"
-          Rename-Item -Path "C:\chromedriver-win64" -NewName "chromedriver"
+          # Download ChromeDriver
+          Write-Host "[3/4] Downloading ChromeDriver..."
+          Invoke-WebRequest -Uri "https://storage.googleapis.com/chrome-for-testing-public/$CHROME_VERSION/win64/chromedriver-win64.zip" -OutFile "chromedriver-win64.zip"
+          Write-Host "[4/4] Extracting ChromeDriver..."
+          Expand-Archive -Path "chromedriver-win64.zip" -DestinationPath "C:\" -Force
+          Rename-Item -Path "C:\chromedriver-win64" -NewName "chromedriver" -Force
           
           # Add to PATH
           echo "C:\chrome" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
           echo "C:\chromedriver" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
           
           # Cleanup
-          Remove-Item "chrome-win64.zip"
-          Remove-Item "chromedriver-win64.zip"
-          Write-Host "Chrome $CHROME_VERSION installed successfully"
+          Remove-Item "chrome-win64.zip" -Force
+          Remove-Item "chromedriver-win64.zip" -Force
+          Write-Host "Chrome $CHROME_VERSION installed successfully!"
 
       # Step 7: Verify Chrome installation
       - name: Verify browser setup
@@ -111,7 +118,7 @@ jobs:
           cd "web application"
           Start-Process php -ArgumentList "-S", "localhost:8000" -WindowStyle Hidden
           Start-Sleep -Seconds 5
-          curl. exe -I http://localhost:8000/index.php
+          curl.exe -I http://localhost:8000/index. php
           Start-Sleep -Seconds 2
         env:
           BASE_URL: http://localhost:8000/index.php
@@ -120,7 +127,7 @@ jobs:
       - name: Run Selenium tests
         run: |
           cd tests
-          python test_order_GitHub_Actions.py
+          python test_order_GitHub_Actions. py
         env:
           BASE_URL: http://localhost:8000/index. php
           PYTHONIOENCODING: utf-8

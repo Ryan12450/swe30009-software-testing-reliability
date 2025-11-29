@@ -24,7 +24,7 @@ jobs:
         with:
           python-version: "3.12"
           cache: 'pip'
-          cache-dependency-path: 'requirements.txt'  # ← FIXED: Removed space
+          cache-dependency-path: 'requirements.txt'
 
       # Step 3: Install project dependencies
       - name: Install dependencies
@@ -53,13 +53,13 @@ jobs:
       # Step 6: Install Chrome and ChromeDriver
       # Only runs if the cache was not found
       - name: Install Chrome for Testing
-        if: steps.chrome-cache.outputs.cache-hit != 'true'
+        if: steps.chrome-cache. outputs.cache-hit != 'true'
         run: |
           CHROME_VERSION="${{ steps.chrome-version.outputs.version }}"
           echo "⬇️ Downloading Chrome for Testing $CHROME_VERSION..."
           
           wget -q "https://storage.googleapis.com/chrome-for-testing-public/${CHROME_VERSION}/linux64/chrome-linux64.zip"
-          unzip -q chrome-linux64.zip
+          unzip -q chrome-linux64. zip
           sudo mkdir -p /opt/chrome
           sudo mv chrome-linux64/* /opt/chrome/
           sudo ln -sf /opt/chrome/chrome /usr/bin/google-chrome
@@ -69,7 +69,7 @@ jobs:
           sudo mv chromedriver-linux64/chromedriver /usr/local/bin/
           sudo chmod +x /usr/local/bin/chromedriver
           
-          rm chrome-linux64.zip chromedriver-linux64.zip
+          rm chrome-linux64. zip chromedriver-linux64. zip
           echo "✅ Chrome $CHROME_VERSION installed successfully"
 
       # Step 7: Verify Chrome installation

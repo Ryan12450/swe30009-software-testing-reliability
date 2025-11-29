@@ -35,10 +35,12 @@ jobs:
       # Step 4: Get latest stable Chrome version
       - name: Get latest Chrome version
         id: chrome-version
+        shell: powershell
         run: |
-          LATEST_VERSION=$(curl -s https://googlechromelabs.github.io/chrome-for-testing/last-known-good-versions-with-downloads.json | jq -r '.channels.Stable.version')
-          echo "version=$LATEST_VERSION" >> $GITHUB_OUTPUT
-          echo "📦 Latest stable Chrome version: $LATEST_VERSION"
+          $response = Invoke-RestMethod -Uri "https://googlechromelabs.github.io/chrome-for-testing/last-known-good-versions-with-downloads.json"
+          $version = $response.channels.Stable.version
+          echo "version=$version" >> $env:GITHUB_OUTPUT
+          Write-Host "📦 Latest stable Chrome version: $version"
 
       # Step 5: Cache Chrome and ChromeDriver binaries
       - name: Cache Chrome and ChromeDriver

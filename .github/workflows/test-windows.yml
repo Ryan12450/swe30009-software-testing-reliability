@@ -118,7 +118,7 @@ jobs:
           cd "web application"
           Start-Process php -ArgumentList "-S", "localhost:8000" -WindowStyle Hidden
           Start-Sleep -Seconds 5
-          curl.exe -I http://localhost:8000/index. php
+          curl.exe -I http://localhost:8000/index.php
           Start-Sleep -Seconds 2
         env:
           BASE_URL: http://localhost:8000/index.php
@@ -129,7 +129,7 @@ jobs:
           cd tests
           python test_order_GitHub_Actions. py
         env:
-          BASE_URL: http://localhost:8000/index. php
+          BASE_URL: http://localhost:8000/index.php
           PYTHONIOENCODING: utf-8
 
       # Step 12: Upload Artifacts

@@ -24,7 +24,7 @@ jobs:
         with:
           python-version: "3.12"
           cache: 'pip'
-          cache-dependency-path: 'requirements. txt'
+          cache-dependency-path: 'requirements.txt'  # ← FIXED: Removed space
 
       # Step 3: Install project dependencies
       - name: Install dependencies
@@ -36,7 +36,7 @@ jobs:
       - name: Get latest Chrome version
         id: chrome-version
         run: |
-          LATEST_VERSION=$(curl -s https://googlechromelabs.github.io/chrome-for-testing/last-known-good-versions-with-downloads.json | jq -r '. channels. Stable.version')
+          LATEST_VERSION=$(curl -s https://googlechromelabs.github.io/chrome-for-testing/last-known-good-versions-with-downloads.json | jq -r '.channels. Stable.version')
           echo "version=$LATEST_VERSION" >> $GITHUB_OUTPUT
           echo "📦 Latest stable Chrome version: $LATEST_VERSION"
 
@@ -65,7 +65,7 @@ jobs:
           sudo ln -sf /opt/chrome/chrome /usr/bin/google-chrome
           
           wget -q "https://storage.googleapis.com/chrome-for-testing-public/${CHROME_VERSION}/linux64/chromedriver-linux64.zip"
-          unzip -q chromedriver-linux64.zip
+          unzip -q chromedriver-linux64. zip
           sudo mv chromedriver-linux64/chromedriver /usr/local/bin/
           sudo chmod +x /usr/local/bin/chromedriver
           
@@ -111,7 +111,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: test-report-ubuntu
-          path: tests/test_report. html
+          path: tests/test_report.html
           retention-days: 30
           if-no-files-found: warn
           
